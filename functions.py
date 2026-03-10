@@ -22,17 +22,7 @@ def armed(master,x):
 			return True
 		time.sleep(0.5)
 
-def set_mode(master, mode_name):
-    if mode_name not in master.mode_mapping():   # pour checker si le mode existe
-        print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
-        return False
 
-    mode_id = master.mode_mapping()[mode_name] # on recupere l'identifiant parmis tous les modes
-
-    master.mav.set_mode_send(
-        master.target_system,
-        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-        mode_id)
 
 def read_mode(master):
 	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
