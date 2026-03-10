@@ -5,7 +5,27 @@ import time
 import os
 import socket
 
-def set_mode(vehicle, mode_name):
+def armed(master,x):
+# ARM
+	master.mav.command_long_send(
+master.target_system,
+master.target_component,
+mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+0,
+x,0,0,0,0,0,0)
+
+	for _ in range(10):
+		msg = master.recv_match(type='HEARTBEAT', blocking=True)
+		armed_state = (msg.base_mode & 0b10000000) > 0
+		if armed_state == bool(x):
+			if x==1:
+				print("Véhicule armé")
+			else:
+				print("Véhicule désarmé")
+			return True
+		time.sleep(0.5)
+
+def set_mode(master, mode_name):
     # Liste complète des modes pour ArduPilot Plane
     modes_arduplane = ["MANUAL", "CIRCLE","STABILIZE","TRAINING","ACRO","FBWA","FBWB","CRUISE","AUTOTUNE","LOITER","RTL","AUTO","GUIDED","INITIALISING","QSTABILIZE","QHOVER","QLOITER","QLAND","QRTL","QAUTOTUNE","QACRO","TAKEOFF"]
     if mode_name not in modes_arduplane:
@@ -16,6 +36,24 @@ def set_mode(vehicle, mode_name):
         print(f"mode changé pour {mode_name}")
         return True
 
+def read_mode(master):
+
+	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
+	mode_id = msg.custom_mode # Récupère l'id du mode actuel 
+	modes=master.mode_mapping() # Dresse le dictionnaire des modes possibles 
+	mode_name= [name for name, id in modes.items() if id == mode_id][0]# Cherche la correspondance entre l'id reçu et le mode dans le dictionnaire des modes
+	print(f"Mode actuel, Id : {mode_name},{mode_id}") 
+	return [mode_name,mode_id]
+
+def set_param(master,name, value):
+	print(f"Envoi de {name} = {value}")
+	master.mav.param_set_send(
+        master.target_system,
+        master.target_component,
+        name.encode('utf-8'),
+        float(value),
+        mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+)
 
 def nettoyage():
    print("nettoyage des scripts")
@@ -32,6 +70,7 @@ def connection_vehicle():
 	master = mavutil.mavlink_connection('udp:127.0.0.1:14551')
 	master.wait_heartbeat()
 	print("Heartbeat reçu")
+	return master
 
 def lancement_sitl():
 	## lancement du SITL
