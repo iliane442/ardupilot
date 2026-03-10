@@ -23,15 +23,16 @@ def armed(master,x):
 		time.sleep(0.5)
 
 def set_mode(master, mode_name):
-    # Liste complète des modes pour ArduPilot Plane
-    modes_arduplane = ["MANUAL", "CIRCLE","STABILIZE","TRAINING","ACRO","FBWA","FBWB","CRUISE","AUTOTUNE","LOITER","RTL","AUTO","GUIDED","INITIALISING","QSTABILIZE","QHOVER","QLOITER","QLAND","QRTL","QAUTOTUNE","QACRO","TAKEOFF"]
-    if mode_name not in modes_arduplane:
-        print("\nmode not in list")
+    if mode_name not in master.mode_mapping():   # pour checker si le mode existe
+        print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
         return False
-    else:
-        vehicle.mode = VehicleMode(mode_name)
-        print(f"mode changé pour {mode_name}")
-        return True
+
+    mode_id = master.mode_mapping()[mode_name] # on recupere l'identifiant parmis tous les modes
+
+    master.mav.set_mode_send(
+        master.target_system,
+        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        mode_id)
 
 def read_mode(master):
 	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
