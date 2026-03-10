@@ -14,13 +14,6 @@ def armed(master,x):
 	for _ in range(10):
 		msg = master.recv_match(type='HEARTBEAT', blocking=True)
 		armed_state = (msg.base_mode & 0b10000000) > 0
-		if armed_state == bool(x):
-			if x==1:
-				print("Véhicule armé")
-			else:
-				print("Véhicule désarmé")
-			return True
-		time.sleep(0.5)
 
 
 
