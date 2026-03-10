@@ -25,7 +25,7 @@ def affichage_liste_maneuvres():
     for el in dico.keys():
         dico[el][1].grid(row=(el), column=0, sticky='w', pady=10)
         
-def action_selection(choix):
+def ajouter_maneuvre(choix):
     global number	
     dico[number] = [choix]
     item = ctk.CTkLabel(frame_page2, text=f" {number}:{dico[number][0]}", font=("Arial", 12), text_color="green")
@@ -113,7 +113,7 @@ frame2_btn_retour.place(x=400, y=20)
 
 menu = ctk.CTkOptionMenu(frame_page2, 
                          values=["décollage", "Vol en palier stabilisé", "Accélération/décélération", "Virage à x °", "changement d'altitude", "atterrissage"],
-                         command=action_selection)
+                         command=ajouter_maneuvre)
 
 menu.set("ajouter une maneuvre") # Texte par défaut
 menu.place(x=400, y=50)
