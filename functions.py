@@ -74,6 +74,7 @@ def connection_vehicle2():
 	print("Heartbeat reçu")
 	return master
 
+
 def lancement_sitl():
 	## lancement du SITL
 	ardupilot_dir = "ardupilot"  # dossier ArduPilot
