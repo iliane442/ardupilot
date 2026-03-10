@@ -1,4 +1,5 @@
 from dronekit import VehicleMode, connect
+from pymavlink import mavutil
 import subprocess
 import time
 import os
@@ -27,10 +28,10 @@ def close(v):
 	return True
 
 def connection_vehicle():
-	connection_string = 'tcp:127.0.0.1:5760'
-	vehicle = connect(connection_string, wait_ready = True, heartbeat_timeout=60)
-	print("connection terminée")
-	return vehicle
+	print("Connexion MAVLink")
+	master = mavutil.mavlink_connection('udp:127.0.0.1:14551')
+	master.wait_heartbeat()
+	print("Heartbeat reçu")
 
 def lancement_sitl():
 	## lancement du SITL
