@@ -1,4 +1,3 @@
-from dronekit import VehicleMode, connect
 from pymavlink import mavutil
 import subprocess
 import time
