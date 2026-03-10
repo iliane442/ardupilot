@@ -6,14 +6,12 @@ import os
 import socket
 
 def armed(master,x):
-# ARM
+	# ARM
 	master.mav.command_long_send(
-master.target_system,
-master.target_component,
-mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-0,
-x,0,0,0,0,0,0)
-
+	master.target_system,
+	master.target_component,
+	mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+	0,x,0,0,0,0,0,0)
 	for _ in range(10):
 		msg = master.recv_match(type='HEARTBEAT', blocking=True)
 		armed_state = (msg.base_mode & 0b10000000) > 0

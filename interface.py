@@ -116,11 +116,11 @@ menu = ctk.CTkOptionMenu(frame_page2,
                          command=ajouter_maneuvre)
 
 menu.set("ajouter une maneuvre") # Texte par défaut
-menu.place(x=400, y=50)
+menu.place(x=400, y=50,)
 entree = tk.Entry(frame_page2)
-entree.place(x=400, y=80,anchor="e")
+entree.place(x=400, y=80)
 frame2_del_man = ctk.CTkButton(frame_page2, text="Supprimer", command=suppression_maneuvre, fg_color="red")
-frame2_del_man.place(x=400, y=110,anchor="e")
+frame2_del_man.place(x=400, y=110)
 
 
 
