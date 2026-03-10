@@ -64,11 +64,18 @@ def close(v):
 	return True
 
 def connection_vehicle():
+	python_cmd = 'from functions import connection_vehicle2; connection_vehicle2(); input("Terminé...")'
+	# On l'intègre dans la commande de terminal
+	subprocess.Popen(['lxterm', '-e', 'python3', '-c', python_cmd])
+
+def connection_vehicle2():
 	print("Connexion MAVLink")
 	master = mavutil.mavlink_connection('udp:127.0.0.1:14551')
+	print("Attente du heartbeat...")
 	master.wait_heartbeat()
 	print("Heartbeat reçu")
 	return master
+
 
 def lancement_sitl():
 	## lancement du SITL
