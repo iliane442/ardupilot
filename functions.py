@@ -35,7 +35,6 @@ def set_mode(master, mode_name):
         return True
 
 def read_mode(master):
-
 	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
 	mode_id = msg.custom_mode # Récupère l'id du mode actuel 
 	modes=master.mode_mapping() # Dresse le dictionnaire des modes possibles 
@@ -64,8 +63,14 @@ def close(v):
 	return True
 
 def connection_vehicle():
+	python_cmd = 'from functions import connection_vehicle2; connection_vehicle2(); input("Terminé...")'
+	# On l'intègre dans la commande de terminal
+	subprocess.Popen(['lxterm', '-e', 'python3', '-c', python_cmd])
+
+def connection_vehicle2():
 	print("Connexion MAVLink")
 	master = mavutil.mavlink_connection('udp:127.0.0.1:14551')
+	print("Attente du heartbeat...")
 	master.wait_heartbeat()
 	print("Heartbeat reçu")
 	return master
@@ -89,7 +94,7 @@ def lancement_sitl():
 
 	# Petite pause pour laisser SITL démarrer
 	#print("pause pour démarrer sitl")
-	time.sleep(15)  # 10 secondes, ajuste si nécessaire
+	time.sleep(10)  # 10 secondes, ajuste si nécessaire
 	print("-----------------------------------------------------lancement fini-----------------------------------------------------")
 	add_output()  # Ajouter les sorties MAVLink après le lancement de SITL
 	return True
