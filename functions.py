@@ -17,7 +17,7 @@ def set_mode(vehicle, mode_name):
 
 
 def nettoyage():
-   print("nettoyage des scripts avant lancement")
+   print("nettoyage des scripts")
    os.system('pkill -9 -f "ardu|mav|sim_vehicle"')
    return True
 

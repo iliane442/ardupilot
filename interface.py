@@ -84,7 +84,7 @@ label1 = ctk.CTkLabel(frame_page1, text="MENU PRINCIPAL", font=("Arial", 20))
 label1.pack(pady=20)
 
 
-frame1_bouton1 = ctk.CTkButton(frame_page1, text="nettoyage des ports", command=nettoyage, corner_radius=10)
+frame1_bouton1 = ctk.CTkButton(frame_page1, text="fermeture", command=nettoyage, corner_radius=10)
 frame1_bouton2 = ctk.CTkButton(frame_page1, text="lancement SITL", command=lancement_sitl, corner_radius=10)
 frame1_bouton3 = ctk.CTkButton(frame_page1, text="connection du vehicule", command=connection_vehicle, corner_radius=10)
 frame1_bouton4 = ctk.CTkButton(frame_page1, text="Options ▼", command=bouton_test, corner_radius=10)
