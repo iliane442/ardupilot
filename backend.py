@@ -1,8 +1,17 @@
 from pymavlink import mavutil
 import time
-import commande as co
-from transforms3d.euler import euler2quat
 from math import radians
+
+
+
+class waypoint:
+    def __init__(self, latitude, longitude, altitude, radius = 5 , command = 'WAYPOINT'):
+        self.lat = latitude 
+        self.long = longitude
+        self.alt = altitude
+        self.radius = radius            ## rayon autour duquel l'avion considère qu'il est passé par le checkpoint
+        self.command = command 
+
 
 #==========Décollage==========
 
