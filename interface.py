@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 
-from backend import waypoint
+from backend import pre_verification, waypoint
 from functions import nettoyage,close,connection_vehicle2,lancement_sitl,armed
 
 number = 0
@@ -12,21 +12,10 @@ mission = []
 def bouton_test():
     print("test")
 
-def afficher_page1(page):
+def afficher_page(page,frame):
     page.pack_forget()
-    frame_page1.pack(expand=True, fill="both")
+    frame.pack(expand=True, fill="both")
 
-def afficher_page2(page):
-    page.pack_forget()
-    page_maneuvres.pack(expand=True, fill="both")
-
-def afficher_page3(page):
-    page.pack_forget()
-    frame_page3.pack(expand=True, fill="both")
-
-def afficher_page4(page):
-    page.pack_forget()
-    frame_page4.pack(expand=True, fill="both")
 
 def affichage_liste_maneuvres():
     colonnes, lignes = page_maneuvres.grid_size()
@@ -74,6 +63,7 @@ def indexage(dico):
 
 def armement():
     global arm,master
+    pre_verification(master)
     try:
         assert master is not None, "Veuillez connecter le véhicule avant de tenter d'armer."
         if switch_arm.get() == 1:
@@ -134,9 +124,9 @@ label1.pack(pady=20)
 frame1_bouton1 = ctk.CTkButton(frame_page1, text="fermeture", command=nettoyage, corner_radius=10)
 frame1_bouton2 = ctk.CTkButton(frame_page1, text="lancement SITL", command=lancement_sitl, corner_radius=10)
 frame1_bouton3 = ctk.CTkButton(frame_page1, text="connection du vehicule", command=connection_vehicle, corner_radius=10)
-frame1_bouton4 = ctk.CTkButton(frame_page1, text="Config véhicule", command=lambda: afficher_page3(frame_page1), corner_radius=10)
-frame1_btn_maneuvre = ctk.CTkButton(frame_page1, text="Maneuvres", command=lambda: afficher_page2(frame_page1))
-frame1_waypoint = ctk.CTkButton(frame_page1, text="Waypoint",command=lambda: afficher_page4(frame_page1), corner_radius=10)
+frame1_bouton4 = ctk.CTkButton(frame_page1, text="Config véhicule", command=lambda: afficher_page(frame_page1,frame_page3), corner_radius=10)
+frame1_btn_maneuvre = ctk.CTkButton(frame_page1, text="Maneuvres", command=lambda: afficher_page(frame_page1,page_maneuvres), corner_radius=10)
+frame1_waypoint = ctk.CTkButton(frame_page1, text="Waypoint",command=lambda: afficher_page(frame_page1,frame_page4), corner_radius=10)
 
 
 # Placement des boutons sur la fenêtre
@@ -154,7 +144,7 @@ label2 = ctk.CTkLabel(page_maneuvres, text="Maneuvres", font=("Arial", 20), text
 label2.place(x=200, y=20)
 
 # Bouton de retour à la page principale
-frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page1(page_maneuvres), fg_color="gray")
+frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page(page_maneuvres,frame_page1), fg_color="gray")
 frame2_btn_retour.place(x=400, y=20)
 
 # Affichage de la liste des maneuvres
@@ -170,7 +160,7 @@ frame2_del_man.place(x=400, y=110)
 
 # Ajout de waypoints
 frame_page4 = ctk.CTkFrame(app)
-frame4_btn_retour = ctk.CTkButton(frame_page4, text="Retour", command=lambda: afficher_page1(frame_page4), fg_color="gray")
+frame4_btn_retour = ctk.CTkButton(frame_page4, text="Retour", command=lambda: afficher_page(frame_page4,frame_page1), fg_color="gray")
 frame4_btn_retour.place(x=10, y=10)
 noms_parametres = ["Altitude (m)", "Latitude(°)", "Longitude(°)", "rayon (m)", "commande"]
 liste_entries = []
@@ -203,7 +193,7 @@ btn_valider.place(x=400, y=300)
 frame_page3 = ctk.CTkFrame(app)
 label3 = ctk.CTkLabel(frame_page3, text="Configuration du véhicule", font=("Arial", 20), text_color="orange")
 label3.pack(pady=20)    
-frame3_btn_retour = ctk.CTkButton(frame_page3, text="Retour", command=lambda: afficher_page1(frame_page3), fg_color="gray")
+frame3_btn_retour = ctk.CTkButton(frame_page3, text="Retour", command=lambda: afficher_page(frame_page3,frame_page1), fg_color="gray")
 frame3_btn_retour.pack(pady=10)
 switch_arm = ctk.CTkSwitch(frame_page3, text="NOT ARMED", command=armement)
 switch_arm.pack(pady=40, padx=20)

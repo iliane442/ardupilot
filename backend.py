@@ -13,6 +13,83 @@ class waypoint:
         self.command = command 
 
 
+def battery_verification(master):
+
+    message = master.recv_match(type='SYS_STATUS', blocking=True, timeout=2)
+    if message is None:
+        print('Impossible de lire la batterie')
+        return False
+    else:
+        battery_remaining = message.battery_remaining
+        print("Batterie restante:", battery_remaining, "%")
+
+    if battery_remaining is None:
+        print("Impossible de connaître l'état de la batterie")
+        return False
+    if battery_remaining < 20:                   ## moins de 20% de batterie 
+        print("Batterie trop faible pour décoller")
+        return False
+    
+    return True 
+
+
+def GPS_verification(master):
+
+    message = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout = 2)
+    if message is None:
+        print('Impossible de connaitre les coordonnées GPS')
+        return False
+    elif message.fix_type >= 3:
+        print("GPS OK")
+        return True
+    else:   
+        print("GPS non prêt")
+        return False
+    
+def sensors_verification(master):
+    ekf_critical_flags= {
+        0: "EKF_ATTITUDE (Tilt roll/pitch)",
+        1: "EKF_VEL_VERT (Vitesse verticale)",
+        2: "EKF_VEL_HORIZ (Vitesse horizontale)",
+        3: "EKF_POS_VERT (Position verticale)",
+        4: "EKF_POS_HORIZ (Position horizontale)",
+        5: "EKF_MAG_HDG (Compas magnétique)",
+ #      6: "EKF_GPS (GPS utilisé par EKF)"
+    }
+
+    ekf_verification = True
+
+    message = master.recv_match(type = 'EKF_STATUS_REPORT', blocking = True, timeout = 2)
+
+    if message is None:
+        print('Impossible de décoller, capteurs indisponibles')
+        return False
+    
+    flags = message.flags 
+
+    for bit, name in ekf_critical_flags.items():
+        if not (flags & (1 << bit)):
+           print(f"EKF flag critique non OK: bit {name}")
+           ekf_verification = False
+    if ekf_verification:
+        print("EKF stable et tous les capteurs critiques OK")
+        return True 
+    else:
+        return False
+
+def pre_verification(master):
+    
+    if not battery_verification(master):
+        return False 
+
+    if not GPS_verification(master):
+        return False
+    
+    if not sensors_verification(master):
+        return False 
+
+    return True 
+
 #==========Décollage==========
 
 def take_off(master,alt=None,thr_max=None,pitch=None,initial_pitch=None):
