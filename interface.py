@@ -9,13 +9,10 @@ dico={}
 arm=False
 master = None
 mission = []
-def bouton_test():
-    print("test")
 
 def afficher_page(page,frame):
     page.pack_forget()
     frame.pack(expand=True, fill="both")
-
 
 def affichage_liste_maneuvres():
     colonnes, lignes = page_maneuvres.grid_size()
