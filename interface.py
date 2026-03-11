@@ -9,17 +9,18 @@ dico={}
 arm=False
 master = None
 mission = []
+dic_mission = {}
+
 
 def afficher_page(page,frame):
     page.pack_forget()
     frame.pack(expand=True, fill="both")
 
 def affichage_liste_maneuvres():
-    colonnes, lignes = page_maneuvres.grid_size()
-    print(f"La grille fait {colonnes} colonnes et {lignes} lignes.")
     for el in dico.keys():
         dico[el][1].grid(row=(el), column=0, sticky='w', pady=10)
-        
+
+
 def ajouter_maneuvre(choix):
     global number	
     dico[number] = [choix]
