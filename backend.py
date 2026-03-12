@@ -8,7 +8,7 @@ import functions as fct
 
 
 class waypoint:
-    def __init__(self, latitude, longitude, altitude, radius = 5 , command = 'WAYPOINT'):
+    def __init__(self, altitude, latitude, longitude, radius = 5 , command = 'WAYPOINT'):
         self.lat = latitude 
         self.long = longitude
         self.alt = altitude
