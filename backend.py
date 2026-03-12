@@ -141,6 +141,22 @@ def check_mission(mission):                 					## permet de s'assurer que la m
         
     return True 
 
+def add_home_waypoint(master, mission):
+
+    for _ in range(10):
+        message = master.recv_match(type ='GLOBAL_POSITION_INT', blocking = True, timeout = 1)        
+        if message:
+            lat = message.lat / 1e7
+            long = message.lon / 1e7
+            alt = message.relative_alt / 1000                       ## attention à ce que le GPS soit opérationnel avant de faire ca 
+            home_waypoint = waypoint(lat,long, alt)
+            mission.insert(0, home_waypoint)
+            print(f'HOME = {lat}, {long}, {alt}')
+            return True 
+
+    print(' Impossible de recuperer la position Home ')
+    return False
+	
 def translate_wp_command_in_Mav_command(wp):			## Les paramètres d'envoi ne sont pas les mêmes selon la commande du waypoint
 
     if wp.command == 'WAYPOINT':
@@ -324,6 +340,7 @@ def get_vit_min(master,masse,roll_angle=0):
 	S_alaire=0.43 #m^2
 	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
 	return vit_min
+
 
 
 
