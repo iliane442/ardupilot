@@ -1,6 +1,8 @@
 from pymavlink import mavutil
 import time
 import math
+from transforms3d.euler import euler2quat
+from math import radians, sqrt, degrees, copysign
 
 
 
@@ -210,37 +212,21 @@ def send_mission(master, mission):																## Il faut être en mode autom
         print('la mission a bien été uploadé sur le controleur de vol')
         time.sleep(5)
         return True 
-#==========Décollage==========
 
-def take_off(master,alt=None,thr_max=None,pitch=None,initial_pitch=None):
-	params_takeoff = {
-    "TKOFF_ALT": alt,        # altitude cible 80 m
-    "TKOFF_LVL_ALT": alt,    # Distance de maintien obligatoire en position horizontale
-    "TKOFF_LVL_PITCH": pitch,  # pitch de montée
-    "TKOFF_GND_PITCH": initial_pitch,   # pitch au sol
-    "TKOFF_THR_MINACC": 0,  # accélération minimale
-    "TKOFF_THR_MAX": thr_max,   # throttle max
-}
-	rep=""
-	if alt> 120:
-		return print(f"erreur {alt} ne peut pas etre spérieur à 120m")
-	if thr_max< 50:
-		while rep not in ["y","Y","n","N"]:
-			rep=input("attention la poussée max est inférieure au minimum recommandé. Voulez vous continuer ? :(Y/N)")
-		if rep=="n" or rep=="N":
-			return print("procédure de décollage interrompue")
-		elif rep=="y" or rep=="Y":
-			print("Validation")
-	for name, value in params_takeoff.items():
-		if value is not None:
-			co.set_param(master,name, value)
-	co.armed(master,1)
-	while altitude<alt:
-		msg = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
-		altitude = msg.relative_alt / 1000
-		co.set_mode(master,'TAKEOFF')
-	co.set_mode(master,'GUIDED')
-	
+#==========Controle du Mode==========
+
+def set_mode(master, mode_name):
+    if mode_name not in master.mode_mapping():   # pour checker si le mode existe
+        print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
+        return False
+
+    mode_id = master.mode_mapping()[mode_name] # on recupere l'identifiant parmis tous les modes
+
+    master.mav.set_mode_send(
+        master.target_system,
+        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+
+        mode_id)
 
 #==========Controle d'attitude==========
 
@@ -261,34 +247,138 @@ def send_altitude(master,roll, pitch, yaw, thrust):
         thrust
     )
 
-def virage(master,angle=-30):
-	co.set_mode(master,'GUIDED')
-	if angle<0:
-		print("Virage gauche")
-	if angle>0:
-		print("Virage droite")
-	if angle == 0 :
-		print("stabilise")
-	for i in range(30):
-		send_attitude(master,
-            roll=angle,
-            pitch=5,
-            yaw=0,
-            thrust=0.6
-        )
-	time.sleep(0.1)
+#==========Lecture Attitude==========
 
-def set_mode(master, mode_name):
-    if mode_name not in master.mode_mapping():   # pour checker si le mode existe
-        print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
-        return False
+def get_attitude(master):
+	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
+	yaw = degrees(msg_ang.yaw)
+	roll=degrees(msg_ang.roll)
+	pitch=degrees(msg_ang.pitch)
 
-    mode_id = master.mode_mapping()[mode_name] # on recupere l'identifiant parmis tous les modes
+	msg_pos = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
+	altitude = msg_pos.relative_alt / 1000
 
-    master.mav.set_mode_send(
+	msg_vit = master.recv_match(type='VFR_HUD', blocking=True)
+	vit=msg_vit.groundspeed	
+
+	return {
+        "yaw": yaw,
+        "roll": roll,
+        "pitch": pitch,
+        "altitude": altitude,
+        "vitesse": vit
+    }
+
+#==========Lecture Mode==========
+
+def read_mode(master):
+
+	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
+	mode_id = msg.custom_mode # Récupère l'id du mode actuel 
+	modes=master.mode_mapping() # Dresse le dictionnaire des modes possibles 
+	mode_name= [name for name, id in modes.items() if id == mode_id][0]# Cherche la correspondance entre l'id reçu et le mode dans le dictionnaire des modes
+	print(f"Mode actuel, Id : {mode_name},{mode_id}") 
+	return [mode_name,mode_id]
+
+#==========Modification de paramètres==========
+
+def set_param(master,name, value):
+	print(f"Envoi de {name} = {value}")
+	master.mav.param_set_send(
         master.target_system,
-        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        master.target_component,
+        name.encode('utf-8'),
+        float(value),
+        mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+)
 
-        mode_id)
+	
+#==========Décollage==========
+
+def take_off(master,alt=None,thr_max=100,pitch=None,initial_pitch=None):
+
+#Variables internes
+
+	rep=""
+	pitch_dec=0
+	etat = get_attitude(master)
+	altitude_ini = etat["altitude"]
+	vit = etat["vitesse"]
+	yaw = etat["yaw"]
+	altitude= altitude_ini-1
+	alt_decol=altitude_ini+alt
+	vit_min=get_vit_min(master,5)
+	
+
+	params_takeoff = {
+    "TKOFF_ALT": alt_decol,        # altitude cible 
+    "TKOFF_LVL_ALT": altitude_ini,    # Distance de maintien obligatoire en position horizontale
+    "TKOFF_LVL_PITCH": pitch,  # pitch de montée
+    "TKOFF_GND_PITCH": initial_pitch,   # pitch au sol
+    "TKOFF_THR_MINACC": 0,  # accélération minimale
+    "TKOFF_THR_MAX": thr_max,   # throttle max
+}
+
+#Mesure de sécurité
+
+	if alt> 120:
+		return print(f"erreur {alt} ne peut pas etre spérieur à 120m")
+	if thr_max!=None and thr_max< 50:
+		while rep not in ["y","Y","n","N"]:
+			rep=input("attention la poussée max est inférieure au minimum recommandé. Voulez vous continuer ? :(Y/N)")
+		if rep=="n" or rep=="N":
+			return print("procédure de décollage interrompue")
+		elif rep=="y" or rep=="Y":
+			print("Validation")
+
+#Envoi des paramètres de décollage à mission planner
+
+	for name, value in params_takeoff.items():
+		if value is not None:
+			set_param(master,name, value)
+
+#Décollage
+
+	set_mode(master,'TAKEOFF')
+	while altitude<altitude_ini+5 and vit<vit_min:
+		etat = get_attitude(master)
+		altitude = etat["altitude"]
+		vit = etat["vitesse"]
+		time.sleep(0.1)
+	set_mode(master,'GUIDED')
+	while altitude < alt_decol:
+		altitude = get_attitude(master)["altitude"]
+		pitch_dec+=1
+		send_attitude(master,1,15,0,0.7)
+		time.sleep(0.1)
+
+#==========Virage==========
+
+def virage(master,angle=90,inclinaison=30):
+	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
+	yaw = degrees(msg_ang.yaw)
+	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
+	co.set_mode(master,'GUIDED')
+	while abs(yaw_target-yaw)>3:
+		yaw = get_attitude(master)["yaw"]
+		send_attitude(master,
+            roll=inclinaison,
+            pitch=0,
+            yaw=0,
+            thrust=0.5
+        )
+		time.sleep(0.05)
+
+#==========Virage en S==========
+
+def S_turn(master,nb_boucle,inclinaison):
+	virage(master,90,inclinaison)
+	for i in range (nb_boucle):
+		virage(master,180,-1*inclinaison)
+		virage(master,180,inclinaison)
+	virage(master,90,-1*inclinaison)
+
+
+
 
 
