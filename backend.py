@@ -398,6 +398,43 @@ def get_vit_min(master,masse,roll_angle=0):
 	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
 	return vit_min
 
+#==========Main non complet ==========
+
+def main(master, mission):        
+    GPS_failsafe_counter = 0
+    sensors_failsafe_counter = 0
+    battery_failsafe_counter = 0  
+    failsafe_threshold= 10                                       ## nombre de cycles consécutifs avant déclenchement d'un failsafe
+    battery_failsafe_threshold = 25 
+    override_counter = 0 
+
+    if check_mission(mission) == False:                                     
+        return
+
+    ## ou bien takeoff ici 
+
+    try:     
+        while True: 
+            bool_vehicule_operational = ask_for_failsafes(master, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, battery_failsafe_threshold, failsafe_threshold)
+            time.sleep(1)
+            if bool_vehicule_operational: 
+                print('test')   ## PARTIE DU CODE POUR METTRE LES MANOEUVRES
+            else: 
+                set_mode(master, 'LOITER' )
+                print("Failsafe actif, en attente d'intervention pilote")
+                
+                start_time = time.time()
+                while not wait_for_pilot_signals(master):
+                    if time.time() - start_time > 60:
+                        set_mode(master,'LAND')                 ## atterrissage d'urgence si le pilote ne prend pas la situation en main 
+                        print('pas de pilote détecté, atterrissage forcé')
+                        return
+                    time.sleep(0.25)
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nDéconnexion.")
+        return 
+    
 
 
 
