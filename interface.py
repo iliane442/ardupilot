@@ -20,10 +20,8 @@ scroll_width = 300
 def afficher_page(page,frame):
     page.pack_forget()
     frame.pack(expand=True, fill="both")
-
-def affichage_liste_maneuvres():
-    for el in dico.keys():
-        dico[el][1].grid(row=(el), column=0, sticky='w', pady=10)
+    if frame == page_maneuvres:
+        rafraichir_menu_selection()
 
 def affichage_liste(dic):
     for el in dic.keys():
@@ -74,7 +72,8 @@ def ajouter_maneuvre(choix):
     item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
     item.bind("<Button-1>",suppression_maneuvre)  # Lier le clic à la fonction de suppression
     dico[num_maneuvres].append(item)
-    affichage_liste_maneuvres()
+    affichage_liste(dico)
+    rafraichir_menu_selection()
     num_maneuvres += 1
 
 def suppression_maneuvre(event):
@@ -84,7 +83,26 @@ def suppression_maneuvre(event):
     dico[num][1].destroy()  # Supprimer le widget associé à la manœuvre
     del dico[num]
     dico, num_maneuvres = indexage(dico)  # Réindexer le dictionnaire après suppression
-    affichage_liste_maneuvres()  # Réafficher la liste des manœuvres
+    affichage_liste(dico)  # Réafficher la liste des manœuvres
+    rafraichir_menu_selection()
+
+def rafraichir_menu_selection():
+    global dic_mission
+    """Met à jour le menu déroulant à partir des clés du dictionnaire."""
+    if not dic_mission:
+        menu_selection_waypoint.configure(values=["Aucun"])
+        menu_selection_waypoint.set("Aucun")
+    else:
+        # On crée les options à partir des données du dictionnaire
+        # {k}: {v[0]} donne par exemple "1: WP"
+        options = [f"{k}: {v[0]}" for k, v in dic_mission.items()]
+        menu_selection_waypoint.configure(values=options)
+
+def choix_waypoint(choix):
+    global dic_mission
+    identifiant = int(choix.split(":")[0].strip())
+    waypoint_selectionne = dic_mission[identifiant][0]
+    activ_wayp.configure(text=f"Waypoint sélectionné : {waypoint_selectionne}", text_color="cyan")
 
 def indexage(dico):
     dico_bis={}
@@ -273,7 +291,10 @@ label2.place(x=200, y=20)
 
 lab_wayp = ctk.CTkLabel(page_maneuvres, text="Waypoints", font=("Arial", 20), text_color="orange")
 lab_wayp.place(x=600, y=20)
-
+menu_selection_waypoint = ctk.CTkOptionMenu(page_maneuvres, values=["Aucun"],command=choix_waypoint)
+menu_selection_waypoint.place(x=600, y=50)
+activ_wayp = ctk.CTkLabel(page_maneuvres, text="Aucun waypoint sélectionné", font=("Arial", 12), text_color="orange")
+activ_wayp.place(x=10, y=40)
 # Bouton de retour à la page principale
 frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page(page_maneuvres,frame_page1), fg_color="gray")
 frame2_btn_retour.place(x=400, y=20)
