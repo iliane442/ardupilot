@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 
-from backend import pre_verification, waypoint
+from backend import pre_verification,check_mission, waypoint
 from functions import nettoyage,close,connection_vehicle2,lancement_sitl,armed
 
 num_maneuvres = 0
@@ -104,7 +104,7 @@ def recuperer_valeurs():
         assert menu2.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
         create_waypoint = []
         for entry in liste_entries:
-            create_waypoint.append(entry.get())
+            create_waypoint.append(float(entry.get()))
         create_waypoint.append(menu2.get())
         mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
         num_waypoints = ajouter_maneuvre_dico(mission[-1],dic_mission,num_waypoints,frame_page4)
@@ -196,6 +196,9 @@ menu2.place(x=500, y=250)
 # Bouton de validation
 btn_valider = ctk.CTkButton(frame_page4, text="Valider le Waypoint", command=recuperer_valeurs)
 btn_valider.place(x=400, y=300)
+
+btn_check_mission = ctk.CTkButton(frame_page4, text="Vérifier la mission", command=lambda: check_mission(mission))
+btn_check_mission.place(x=400, y=350)
 
 
 
