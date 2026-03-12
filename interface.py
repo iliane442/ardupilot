@@ -7,8 +7,8 @@ import threading
 from backend import pre_verification,check_mission, waypoint, main
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
-num_maneuvres = 0
-num_waypoints = 0
+
+
 dico={}
 arm=False
 master = None
@@ -27,10 +27,10 @@ def affichage_liste(dic):
     for el in dic.keys():
         dic[el][1].grid(row=(el), column=0, sticky='w', pady=10)
 
-def create_waypoint():
-    global num_waypoints,mission,dic_mission
+def create_waypoint(dic=dic_mission):
+    global mission
+    number_waypoints = len(dic)  # On utilise la longueur du dictionnaire pour déterminer le numéro du waypoint
     try:
-        print(liste_entries)
         assert all(float(entry.get()) for entry in liste_entries), "Veuillez mettre des int/float tous les champs avant de valider la mission."
         assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
         assert menu2.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
@@ -41,50 +41,52 @@ def create_waypoint():
         create_waypoint.append(menu2.get())
         menu2.set("ajouter une commande") # Réinitialiser le menu déroulant
         mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
-        num_waypoints = ajouter_waypoint_dico(mission[-1],dic_mission,num_waypoints,scroll_waypoint)
+        ajouter_waypoint_dico(mission[-1],dic,number_waypoints,scroll_waypoint)
     except AssertionError as e:
         item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
         item.place(x=400, y=300)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur
 
 def ajouter_waypoint_dico(val,dic,num,page):
-    dic[num]=[val]
+    dic_maneuvres={}
+    dic[num]=[val,dic_maneuvres]
     item = ctk.CTkLabel(page, text=f" {num}:{dic[num][0]}", font=("Arial", 12), text_color="green",cursor="hand2",wraplength=scroll_width-10,justify="left")
-    item.bind("<Button-1>",suppression_waypoint)  # Lier le clic à la fonction de suppression
-    dic[num].append(item)
+    item.bind("<Button-1>",lambda event: suppression_dico(event,dic))  # Lier le clic à la fonction de suppression
+    dic[num].insert(-1,item)
     affichage_liste(dic)
-    num+=1
-    return num
 
-def suppression_waypoint(event):
-    global dic_mission, num_waypoints, mission
-    widget = event.widget
-    num = int(widget.cget("text").split(":")[0].strip())  # Extraire le numéro du waypoint à supprimer
-    dic_mission[num][1].destroy()  # Supprimer le widget associé au waypoint
-    del dic_mission[num]  # Supprimer l'entrée du dictionnaire
-    del mission[num]  # Supprimer le waypoint de la mission
-    dic_mission, num_waypoints = indexage(dic_mission)  # Réindexer le dictionnaire après suppression
-    affichage_liste(dic_mission)  # Réafficher la liste des waypoints
 
-def ajouter_maneuvre(choix):
-    global num_maneuvres	
+def ajouter_maneuvre(choix, waypoint):
+    num_waypoint=int(waypoint.split(":")[0].strip())
+    dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
+    num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint	
     dico[num_maneuvres] = [choix]
     item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
-    item.bind("<Button-1>",suppression_maneuvre)  # Lier le clic à la fonction de suppression
+    item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
     dico[num_maneuvres].append(item)
     affichage_liste(dico)
     rafraichir_menu_selection()
-    num_maneuvres += 1
-
-def suppression_maneuvre(event):
-    global dico, num_maneuvres
+    
+def suppression_dico(event,dico): # Permet de supprimer un élément d'un dictionnaire et son widget associé à partir d'un clic sur le widget (arg : event du clic, dictionnaire dans lequel supprimer l'élément )
     widget = event.widget
-    num = int(widget.cget("text").split(":")[0].strip())  # Extraire le numéro de la manœuvre à supprimer
-    dico[num][1].destroy()  # Supprimer le widget associé à la manœuvre
-    del dico[num]
-    dico, num_maneuvres = indexage(dico)  # Réindexer le dictionnaire après suppression
-    affichage_liste(dico)  # Réafficher la liste des manœuvres
-    rafraichir_menu_selection()
+    num = int(widget.cget("text").split(":")[0].strip())  # Extraire le numéro de l'élément à supprimer
+    dico[num][1].destroy()  # Supprimer le widget associé à l'élément
+    del dico[num]  # Supprimer l'entrée du dictionnaire
+    dico_neuf = indexage(dico)  # Réindexer le dictionnaire après suppression
+    dico.clear()  # Mettre à jour le dictionnaire avec les nouvelles clés
+    dico.update(dico_neuf)
+    affichage_liste(dico)  # Réafficher la liste des éléments
+
+def indexage(dico): # Permet de réindexer les éléments d'un dictionnaire après suppression pour éviter les trous dans la numérotation ( arg : dictionnaire )
+    dico_bis={}
+    tmp=0
+    for el in dico:
+        dico_bis[tmp]=dico[el]
+        dico_bis[tmp][1].configure(text=f" {tmp}:{dico[el][0]}") # Mise à jour du texte du widget avec le nouveau numéro
+        dico_bis[tmp][1].bind("<Button-1>", lambda e, d=dico_bis: suppression_dico(e, d))
+        tmp+=1
+    return dico_bis
+
 
 def rafraichir_menu_selection():
     global dic_mission
@@ -104,14 +106,7 @@ def choix_waypoint(choix):
     waypoint_selectionne = dic_mission[identifiant][0]
     activ_wayp.configure(text=f"Waypoint sélectionné : {waypoint_selectionne}", text_color="cyan")
 
-def indexage(dico):
-    dico_bis={}
-    tmp=0
-    for el in dico:
-        dico_bis[tmp]=dico[el]
-        dico_bis[tmp][1].configure(text=f" {tmp}:{dico[el][0]}") # Mise à jour du texte du widget avec le nouveau numéro
-        tmp+=1
-    return dico_bis,tmp
+
 
 def armement():
     global arm,master
@@ -302,7 +297,7 @@ frame2_btn_retour.place(x=400, y=20)
 # Affichage de la liste des maneuvres
 menu1 = ctk.CTkOptionMenu(page_maneuvres, 
                          values=["décollage", "Vol en palier stabilisé", "Accélération/décélération", "Virage à x °", "changement d'altitude", "atterrissage"],
-                         command=ajouter_maneuvre)
+                         command=lambda event: ajouter_maneuvre(event, menu_selection_waypoint.get()))
 menu1.set("ajouter une maneuvre") # Texte par défaut
 menu1.place(x=400, y=50,)
 scroll_maneuvre = ctk.CTkScrollableFrame(page_maneuvres, height=400, width=scroll_width)
