@@ -21,28 +21,25 @@ class waypoint:
 
 ## Verification des composants   
 
-def battery_verification(master):
-
-    message = master.recv_match(type='SYS_STATUS', blocking=True, timeout=2)
+def battery_verification(master, blocking):
+    message = master.recv_match(type='SYS_STATUS', blocking=blocking, timeout=2 if blocking else 0 )
     if message is None:
-        print('Impossible de lire la batterie')
-        return False
-    else:
-        battery_remaining = message.battery_remaining
-        print("Batterie restante:", battery_remaining, "%")
-
-    if battery_remaining is None:
-        print("Impossible de connaître l'état de la batterie")
-        return False
-    if battery_remaining < 20:                   ## moins de 20% de batterie 
-        print("Batterie trop faible pour décoller")
         return False
     
+    voltage = message.voltage_battery / 1000                ## tension de base en mv
+    battery_remaining = message.battery_remaining
+
+    if voltage < 10.5:
+        print("Voltage batterie trop faible")
+        return False
+
+    if battery_remaining is not None and battery_remaining < 20:
+        print("Batterie trop faible")
+        return False
+
     return True 
 
-
-def GPS_verification(master):
-
+def GPS_pre_verification(master):
     message = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout = 2)
     if message is None:
         print('Impossible de connaitre les coordonnées GPS')
@@ -53,8 +50,19 @@ def GPS_verification(master):
     else:   
         print("GPS non prêt")
         return False
+
+def GPS_verification(master):
+    msg = master.recv_match(type='GPS_RAW_INT', blocking=False)
+    if msg is None:
+        print("GPS non reçu")
+        return False 
+    elif msg.fix_type >= 3 and msg.satellites_visible >= 6:
+        return True 
+    else:
+        print(f"GPS faible (fix={msg.fix_type}, sats={msg.satellites_visible})")  
+        return False  
     
-def sensors_verification(master):
+def sensors_verification(master, blocking):
     ekf_critical_flags= {
         0: "EKF_ATTITUDE (Tilt roll/pitch)",
         1: "EKF_VEL_VERT (Vitesse verticale)",
@@ -67,10 +75,9 @@ def sensors_verification(master):
 
     ekf_verification = True
 
-    message = master.recv_match(type = 'EKF_STATUS_REPORT', blocking = True, timeout = 2)
+    message = master.recv_match(type = 'EKF_STATUS_REPORT', blocking = blocking, timeout = 2 if blocking else 0)
 
     if message is None:
-        print('Impossible de décoller, capteurs indisponibles')
         return False
     
     flags = message.flags 
@@ -87,16 +94,18 @@ def sensors_verification(master):
 
 def pre_verification(master):
     
-    if not battery_verification(master):
+    if not battery_verification(master, blocking = True):
+        print('Impossible de lire la batterie')
         return False 
 
-    if not GPS_verification(master):
+    if not GPS_pre_verification(master):
         return False
     
-    if not sensors_verification(master):
+    if not sensors_verification(master, blocking = True):
+        print(' Les capteurs sont indisponibles')
         return False 
 
-    return True 
+    return True 	
 
 def ask_for_failsafes(master, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, battery_failsafe_threshold, failsafe_threshold):
     
@@ -435,6 +444,7 @@ def main(master, mission):
         print("\nDéconnexion.")
         return 
     
+
 
 
 
