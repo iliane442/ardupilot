@@ -2,7 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 
 from backend import pre_verification,check_mission, waypoint
-from functions import nettoyage,connection_vehicle2,lancement_sitl,armed
+from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
 num_maneuvres = 0
 num_waypoints = 0
@@ -129,6 +129,46 @@ def check_mission_interface(mission):
         item.place(x=200, y=400)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes
 
+def charger_pid_actuels(axe_nom):
+    
+    # Récupère les valeurs réelles du drone pour remplir les champs
+    prefix = "RLL" if axe_nom == "Roll" else "PTCH" if axe_nom == "Pitch" else "YAW"
+    
+    # On essaie de récupérer les 3 paramètres
+    try:
+        # Note : master doit être global ou accessible ici
+        p = master.param_fetch_one(f"{prefix}_RATE_P")
+        i = master.param_fetch_one(f"{prefix}_RATE_I")
+        d = master.param_fetch_one(f"{prefix}_RATE_D")
+        
+        # Mise à jour des champs de saisie
+        entry_p.delete(0, tk.END)
+        entry_p.insert(0, str(round(p, 4)))
+        
+        entry_i.delete(0, tk.END)
+        entry_i.insert(0, str(round(i, 4)))
+        
+        entry_d.delete(0, tk.END)
+        entry_d.insert(0, str(round(d, 4)))
+        
+        label_status.configure(text=f"Valeurs {axe_nom} chargées", text_color="green")
+    except:
+        label_status.configure(text="Erreur de lecture drone", text_color="red")
+
+def sauvegarder_pid():
+    
+    #Envoie les valeurs modifiées au drone
+    axe = axe_var.get()
+    prefix = "RLL" if axe == "Roll" else "PTCH" if axe == "Pitch" else "YAW"
+    
+    try:
+        set_param(master,f"{prefix}_RATE_P", float(entry_p.get()))
+        set_param(master,f"{prefix}_RATE_I", float(entry_i.get()))
+        set_param(master,f"{prefix}_RATE_D", float(entry_d.get()))
+        label_status.configure(text="Paramètres mis à jour !", text_color="cyan")
+    except ValueError:
+        label_status.configure(text="Format invalide", text_color="red")
+
 
 
 # 2. Création de la fenêtre principale
@@ -236,5 +276,36 @@ frame3_btn_retour = ctk.CTkButton(frame_page3, text="Retour", command=lambda: af
 frame3_btn_retour.pack(pady=10)
 switch_arm = ctk.CTkSwitch(frame_page3, text="NOT ARMED", command=armement)
 switch_arm.pack(pady=40, padx=20)
+
+# Dans la section PID de frame_page3 
+axe_var = ctk.StringVar(value="Roll")
+menu_pid = ctk.CTkOptionMenu(frame_page3, 
+                             values=["Roll", "Pitch", "Yaw"], 
+                             variable=axe_var,
+                             command=charger_pid_actuels)
+menu_pid.pack(pady=10)
+
+frame_inputs = ctk.CTkFrame(frame_page3, fg_color="transparent")
+frame_inputs.pack(pady=5)
+
+# Assignation des variables globales lors de la création
+ctk.CTkLabel(frame_inputs, text="P :").grid(row=0, column=0, padx=5)
+entry_p = ctk.CTkEntry(frame_inputs, width=120)
+entry_p.grid(row=0, column=1, pady=2)
+
+ctk.CTkLabel(frame_inputs, text="I :").grid(row=1, column=0, padx=5)
+entry_i = ctk.CTkEntry(frame_inputs, width=120)
+entry_i.grid(row=1, column=1, pady=2)
+
+ctk.CTkLabel(frame_inputs, text="D :").grid(row=2, column=0, padx=5)
+entry_d = ctk.CTkEntry(frame_inputs, width=120)
+entry_d.grid(row=2, column=1, pady=2)
+
+label_status = ctk.CTkLabel(frame_page3, text="Sélectionnez un axe pour charger les données", font=("Arial", 11))
+label_status.pack()
+
+btn_save = ctk.CTkButton(frame_page3, text="Appliquer les changements", command=sauvegarder_pid, fg_color="green")
+btn_save.pack(pady=10)
+
 
 app.mainloop()
