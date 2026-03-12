@@ -1,8 +1,10 @@
 import customtkinter as ctk
 import tkinter as tk
 import time
+import sys
+import threading 
 
-from backend import pre_verification,check_mission, waypoint
+from backend import pre_verification,check_mission, waypoint, main
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
 num_maneuvres = 0
@@ -196,6 +198,35 @@ def sauvegarder_pid():
     except ValueError:
         label_status.configure(text="Format invalide", text_color="red")
 
+def terminal_write(message):
+    terminal.configure(state="normal")
+    terminal.insert("end", message)
+    terminal.see("end")
+    terminal.configure(state="disabled")
+
+def run_with_terminal(func, *args, **kwargs):
+    old_stdout = sys.stdout  # sauvegarde l'ancien stdout
+    class StdoutRedirector:
+        def write(self, message):
+            # envoie chaque message dans le widget terminal
+            app.after(0, terminal_write, message)
+        def flush(self):
+            pass  # nécessaire pour que certains prints fonctionnent
+    sys.stdout = StdoutRedirector()  # redirige stdout vers notre widget
+    try:
+        func(*args, **kwargs)  # exécute la fonction ciblée
+    finally:
+        sys.stdout = old_stdout  # restaure stdout à la fin
+
+def lancer_mission():
+
+    terminal.configure(state="normal")          
+    terminal.delete("1.0", "end")                       ## pour supprimer si on lance une mission deux fois d'affilée
+    terminal.configure(state="disabled")
+
+    thread = threading.Thread(target=run_with_terminal, args=(main, master,mission))           ## A modifier 
+    thread.daemon = True
+    thread.start()
 
 
 # 2. Création de la fenêtre principale
@@ -334,5 +365,25 @@ label_status.pack()
 btn_save = ctk.CTkButton(frame_page3, text="Appliquer les changements", command=sauvegarder_pid, fg_color="green")
 btn_save.pack(pady=10)
 
+## Gestion de la page de lancement de la mission 
+
+frame_page5 = ctk.CTkFrame(app)
+label5 = ctk.CTkLabel(frame_page5, text="Lancement de la Mission", font=("Arial", 20), text_color="orange")
+label5.pack(pady=20)
+btn_retour5 = ctk.CTkButton(frame_page5, text="Retour", command=lambda: afficher_page(frame_page5, frame_page1), fg_color="gray")
+btn_retour5.pack(pady=10)
+
+btn_lancer_mission = ctk.CTkButton(frame_page5, text="Lancer la Mission", command=lancer_mission)
+btn_lancer_mission.pack(pady=40)
+
+frame1_btn_mission = ctk.CTkButton(frame_page1, text="Lancement Mission", 
+                                   command=lambda: afficher_page(frame_page1, frame_page5), 
+                                   corner_radius=10)
+frame1_btn_mission.pack(pady=10)
+
+## creation du terminal a l'intérieur 
+terminal = ctk.CTkTextbox(frame_page5, width=700, height=400, corner_radius=5)
+terminal.pack(pady=20)
+terminal.configure(state="disabled")
 
 app.mainloop()
