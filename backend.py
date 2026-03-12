@@ -1,6 +1,6 @@
 from pymavlink import mavutil
 import time
-from math import radians
+import math
 
 
 
@@ -290,4 +290,5 @@ def set_mode(master, mode_name):
         mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
 
         mode_id)
+
 
