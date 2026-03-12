@@ -36,7 +36,7 @@ def ajouter_maneuvre_dico(val,dic,num,page):
 def ajouter_maneuvre(choix):
     global num_maneuvres	
     dico[num_maneuvres] = [choix]
-    item = ctk.CTkLabel(page_maneuvres, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green")
+    item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green")
     dico[num_maneuvres].append(item)
     affichage_liste_maneuvres()
     num_maneuvres += 1
@@ -110,7 +110,7 @@ def recuperer_valeurs():
         create_waypoint.append(menu2.get())
         menu2.set("ajouter une commande") # Réinitialiser le menu déroulant
         mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
-        num_waypoints = ajouter_maneuvre_dico(mission[-1],dic_mission,num_waypoints,frame_page4)
+        num_waypoints = ajouter_maneuvre_dico(mission[-1],dic_mission,num_waypoints,scroll_waypoint)
 
     except AssertionError as e:
         item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
@@ -183,6 +183,9 @@ menu1 = ctk.CTkOptionMenu(page_maneuvres,
                          command=ajouter_maneuvre)
 menu1.set("ajouter une maneuvre") # Texte par défaut
 menu1.place(x=400, y=50,)
+scroll_maneuvre = ctk.CTkScrollableFrame(page_maneuvres, height=400)
+scroll_maneuvre.place(x=50, y=100)
+
 entree = tk.Entry(page_maneuvres)
 entree.place(x=400, y=80)
 frame2_del_man = ctk.CTkButton(page_maneuvres, text="Supprimer", command=suppression_maneuvre, fg_color="red")
@@ -217,9 +220,10 @@ menu2.place(x=500, y=250)
 # Bouton de validation
 btn_valider = ctk.CTkButton(frame_page4, text="Valider le Waypoint", command=recuperer_valeurs)
 btn_valider.place(x=400, y=300)
-
 btn_check_mission = ctk.CTkButton(frame_page4, text="Vérifier la mission", command=lambda: check_mission_interface(mission))
 btn_check_mission.place(x=400, y=350)
+scroll_waypoint = ctk.CTkScrollableFrame(frame_page4, height=600,width=300)
+scroll_waypoint.place(x=10, y=10)
 
 
 
