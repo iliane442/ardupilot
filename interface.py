@@ -99,8 +99,8 @@ def connection_vehicle():
 def recuperer_valeurs():
     global num_waypoints,mission,dic_mission
     try:
+        assert all(float(entry.get()) for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
         assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
-        assert all(entry.get().isdigit() for entry in liste_entries[:-1]), "Veuillez entrer des valeurs numériques valides pour l'altitude, la latitude, la longitude et le rayon."
         assert menu2.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
         create_waypoint = []
         for entry in liste_entries:

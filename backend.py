@@ -1,9 +1,9 @@
 from pymavlink import mavutil
 import time
 import math
-from transforms3d.euler import euler2quat
+#from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
-import fonctions as fct
+import functions as fct
 
 
 
@@ -16,7 +16,7 @@ class waypoint:
         self.command = command 
 
     def __str__(self):
-        return f": lat={self.lat}, long={self.long}, alt={self.alt}, radius={self.radius}, command={self.command}"
+        return f" lat={self.lat}, long={self.long}, alt={self.alt}, radius={self.radius}, command={self.command}"
 
 
 ## Verification des composants   
