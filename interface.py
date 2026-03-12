@@ -149,21 +149,23 @@ label1 = ctk.CTkLabel(frame_page1, text="MENU PRINCIPAL", font=("Arial", 20))
 label1.pack(pady=20)
 
 # Création des boutons
-frame1_bouton1 = ctk.CTkButton(frame_page1, text="fermeture", command=nettoyage, corner_radius=10)
-frame1_bouton2 = ctk.CTkButton(frame_page1, text="lancement SITL", command=lancement_sitl, corner_radius=10)
-frame1_bouton3 = ctk.CTkButton(frame_page1, text="connection du vehicule", command=connection_vehicle, corner_radius=10)
-frame1_bouton4 = ctk.CTkButton(frame_page1, text="Config véhicule", command=lambda: afficher_page(frame_page1,frame_page3), corner_radius=10)
-frame1_btn_maneuvre = ctk.CTkButton(frame_page1, text="Maneuvres", command=lambda: afficher_page(frame_page1,page_maneuvres), corner_radius=10)
-frame1_waypoint = ctk.CTkButton(frame_page1, text="Waypoint",command=lambda: afficher_page(frame_page1,frame_page4), corner_radius=10)
+frame1_fermeture = ctk.CTkButton(frame_page1, text="fermeture", command=nettoyage, corner_radius=10,width=250, height=40)
+frame1_sitl = ctk.CTkButton(frame_page1, text="lancement SITL", command=lancement_sitl, corner_radius=10,width=250, height=40)
+frame1_connection = ctk.CTkButton(frame_page1, text="connection du vehicule", command=connection_vehicle, corner_radius=10,width=250, height=40)
+frame1_config = ctk.CTkButton(frame_page1, text="Config véhicule", command=lambda: afficher_page(frame_page1,frame_page3), corner_radius=10,width=250, height=40)
+frame1_maneuvre = ctk.CTkButton(frame_page1, text="Maneuvres", command=lambda: afficher_page(frame_page1,page_maneuvres), corner_radius=10,width=250, height=40)
+frame1_waypoint = ctk.CTkButton(frame_page1, text="Waypoint",command=lambda: afficher_page(frame_page1,frame_page4), corner_radius=10,width=250, height=40)
 
 
 # Placement des boutons sur la fenêtre
-frame1_btn_maneuvre.pack(pady=10)
-frame1_bouton1.pack(pady=10)
-frame1_bouton2.pack(pady=10)
-frame1_bouton3.pack(pady=10)
-frame1_bouton4.pack(pady=10)
-frame1_waypoint.pack(pady=20)
+frame1_sitl.pack(pady=10)
+frame1_connection.pack(pady=10)
+frame1_config.pack(pady=10)
+frame1_waypoint.pack(pady=10)
+frame1_maneuvre.pack(pady=10)
+frame1_fermeture.pack(pady=10)
+
+
 
 
 # Gestion de la page maneuvres
@@ -186,7 +188,9 @@ entree.place(x=400, y=80)
 frame2_del_man = ctk.CTkButton(page_maneuvres, text="Supprimer", command=suppression_maneuvre, fg_color="red")
 frame2_del_man.place(x=400, y=110)
 
-# Ajout de waypoints
+
+
+# Gestion de la page waypoints
 frame_page4 = ctk.CTkFrame(app)
 frame4_btn_retour = ctk.CTkButton(frame_page4, text="Retour", command=lambda: afficher_page(frame_page4,frame_page1), fg_color="gray")
 frame4_btn_retour.place(x=400, y=10)
