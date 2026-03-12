@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import tkinter as tk
+import time
 
 from backend import pre_verification,check_mission, waypoint
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
@@ -118,31 +119,59 @@ def check_mission_interface(mission):
         item.place(x=200, y=400)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes
 
+
+
 def charger_pid_actuels(axe_nom):
-    
-    # Récupère les valeurs réelles du drone pour remplir les champs
+    global entry_p, entry_i, entry_d, label_status,master
+    if master is None:
+        label_status.configure(text="Connectez le véhicule d'abord", text_color="red")
+        return
+
+    # Traduction du nom de l'axe vers le préfixe ArduPilot
     prefix = "RLL" if axe_nom == "Roll" else "PTCH" if axe_nom == "Pitch" else "YAW"
-    
-    # On essaie de récupérer les 3 paramètres
+    suffixes = ["P", "I", "D"]
+    vals = {}
+
     try:
-        # Note : master doit être global ou accessible ici
-        p = master.param_fetch_one(f"{prefix}_RATE_P")
-        i = master.param_fetch_one(f"{prefix}_RATE_I")
-        d = master.param_fetch_one(f"{prefix}_RATE_D")
-        
-        # Mise à jour des champs de saisie
+        label_status.configure(text="Récupération...", text_color="yellow")
+        app.update()
+
+        for s in suffixes:
+            param_id = f"{prefix}_RATE_{s}"
+            
+            # 1. On demande explicitement au drone de nous envoyer la valeur
+            master.mav.param_request_read_send(
+                master.target_system, 
+                master.target_component,
+                param_id.encode('utf-8'), 
+                -1  # -1 car on cherche par nom (param_id) et non par index
+            )
+            
+            # 2. On attend le message de retour spécifique
+            
+            msg = master.recv_match(type='PARAM_VALUE', blocking=True, timeout=1.0)
+            
+            if msg and msg.param_id == param_id:
+                vals[s] = msg.param_value
+            else:
+                # Si pas de réponse, on tente la méthode cache
+                vals[s] = master.param_fetch_one(param_id)
+
+        # 3. Mise à jour de l'interface
         entry_p.delete(0, tk.END)
-        entry_p.insert(0, str(round(p, 4)))
+        entry_p.insert(0, str(round(vals["P"], 4)))
         
         entry_i.delete(0, tk.END)
-        entry_i.insert(0, str(round(i, 4)))
+        entry_i.insert(0, str(round(vals["I"], 4)))
         
         entry_d.delete(0, tk.END)
-        entry_d.insert(0, str(round(d, 4)))
-        
-        label_status.configure(text=f"Valeurs {axe_nom} chargées", text_color="green")
-    except:
-        label_status.configure(text="Erreur de lecture drone", text_color="red")
+        entry_d.insert(0, str(round(vals["D"], 4)))
+
+        label_status.configure(text=f"Valeurs {axe_nom} chargées !", text_color="green")
+
+    except Exception as e:
+        print(f"Erreur lecture : {e}")
+        label_status.configure(text="Erreur de lecture SITL", text_color="red")
 
 def sauvegarder_pid():
     
