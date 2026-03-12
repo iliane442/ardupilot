@@ -11,6 +11,7 @@ arm=False
 master = None
 mission = []
 dic_mission = {}
+scroll_width = 300
 
 
 def afficher_page(page,frame):
@@ -25,18 +26,49 @@ def affichage_liste(dic):
     for el in dic.keys():
         dic[el][1].grid(row=(el), column=0, sticky='w', pady=10)
 
+def create_waypoint():
+    global num_waypoints,mission,dic_mission
+    try:
+        print(liste_entries)
+        assert all(float(entry.get()) for entry in liste_entries), "Veuillez mettre des int/float tous les champs avant de valider la mission."
+        assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
+        assert menu2.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
+        create_waypoint = []
+        for entry in liste_entries:
+            create_waypoint.append(float(entry.get()))
+            entry.delete(0, tk.END)  # Effacer le contenu de l'entry après récupération
+        create_waypoint.append(menu2.get())
+        menu2.set("ajouter une commande") # Réinitialiser le menu déroulant
+        mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
+        num_waypoints = ajouter_waypoint_dico(mission[-1],dic_mission,num_waypoints,scroll_waypoint)
+    except AssertionError as e:
+        item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
+        item.place(x=400, y=300)
+        app.after(3000, item.destroy)  # Supprimer le message d'erreur
+
 def ajouter_waypoint_dico(val,dic,num,page):
     dic[num]=[val]
-    item = ctk.CTkLabel(page, text=f" {num}:{dic[num][0]}", font=("Arial", 12), text_color="green")
+    item = ctk.CTkLabel(page, text=f" {num}:{dic[num][0]}", font=("Arial", 12), text_color="green",cursor="hand2",wraplength=scroll_width-10,justify="left")
+    item.bind("<Button-1>",suppression_waypoint)  # Lier le clic à la fonction de suppression
     dic[num].append(item)
     affichage_liste(dic)
     num+=1
     return num
 
+def suppression_waypoint(event):
+    global dic_mission, num_waypoints, mission
+    widget = event.widget
+    num = int(widget.cget("text").split(":")[0].strip())  # Extraire le numéro du waypoint à supprimer
+    dic_mission[num][1].destroy()  # Supprimer le widget associé au waypoint
+    del dic_mission[num]  # Supprimer l'entrée du dictionnaire
+    del mission[num]  # Supprimer le waypoint de la mission
+    dic_mission, num_waypoints = indexage(dic_mission)  # Réindexer le dictionnaire après suppression
+    affichage_liste(dic_mission)  # Réafficher la liste des waypoints
+
 def ajouter_maneuvre(choix):
     global num_maneuvres	
     dico[num_maneuvres] = [choix]
-    item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2")
+    item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
     item.bind("<Button-1>",suppression_maneuvre)  # Lier le clic à la fonction de suppression
     dico[num_maneuvres].append(item)
     affichage_liste_maneuvres()
@@ -85,26 +117,7 @@ def connection_vehicle():
     global master
     master = connection_vehicle2()
 
-def create_waypoint():
-    global num_waypoints,mission,dic_mission
-    try:
-        print(liste_entries)
-        assert all(float(entry.get()) for entry in liste_entries), "Veuillez mettre des int/float tous les champs avant de valider la mission."
-        assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
-        assert menu2.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
-        create_waypoint = []
-        for entry in liste_entries:
-            create_waypoint.append(float(entry.get()))
-            entry.delete(0, tk.END)  # Effacer le contenu de l'entry après récupération
-        create_waypoint.append(menu2.get())
-        menu2.set("ajouter une commande") # Réinitialiser le menu déroulant
-        mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
-        num_waypoints = ajouter_waypoint_dico(mission[-1],dic_mission,num_waypoints,scroll_waypoint)
 
-    except AssertionError as e:
-        item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
-        item.place(x=400, y=300)
-        app.after(3000, item.destroy)  # Supprimer le message d'erreur
 
 def check_mission_interface(mission):
     try :
@@ -114,12 +127,12 @@ def check_mission_interface(mission):
         item.place(x=400, y=400)
         app.after(3000, item.destroy)  # Supprimer le message après 3 secondes
     except AssertionError as e:
-        item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
+        item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red",wraplength=180,justify="left") # wraplength a adapter en fonction de la taille de l'interface
         item.place(x=200, y=400)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes
 
 def charger_pid_actuels(axe_nom):
-    
+    global master
     # Récupère les valeurs réelles du drone pour remplir les champs
     prefix = "RLL" if axe_nom == "Roll" else "PTCH" if axe_nom == "Pitch" else "YAW"
     
@@ -145,7 +158,7 @@ def charger_pid_actuels(axe_nom):
         label_status.configure(text="Erreur de lecture drone", text_color="red")
 
 def sauvegarder_pid():
-    
+    global master
     #Envoie les valeurs modifiées au drone
     axe = axe_var.get()
     prefix = "RLL" if axe == "Roll" else "PTCH" if axe == "Pitch" else "YAW"
@@ -202,6 +215,9 @@ page_maneuvres = ctk.CTkFrame(app)
 label2 = ctk.CTkLabel(page_maneuvres, text="Maneuvres", font=("Arial", 20), text_color="orange")
 label2.place(x=200, y=20)
 
+lab_wayp = ctk.CTkLabel(page_maneuvres, text="Waypoints", font=("Arial", 20), text_color="orange")
+lab_wayp.place(x=600, y=20)
+
 # Bouton de retour à la page principale
 frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page(page_maneuvres,frame_page1), fg_color="gray")
 frame2_btn_retour.place(x=400, y=20)
@@ -212,7 +228,7 @@ menu1 = ctk.CTkOptionMenu(page_maneuvres,
                          command=ajouter_maneuvre)
 menu1.set("ajouter une maneuvre") # Texte par défaut
 menu1.place(x=400, y=50,)
-scroll_maneuvre = ctk.CTkScrollableFrame(page_maneuvres, height=400)
+scroll_maneuvre = ctk.CTkScrollableFrame(page_maneuvres, height=400, width=scroll_width)
 scroll_maneuvre.place(x=50, y=100)
 
 
@@ -248,7 +264,7 @@ btn_valider = ctk.CTkButton(frame_page4, text="Valider le Waypoint", command=cre
 btn_valider.place(x=400, y=300)
 btn_check_mission = ctk.CTkButton(frame_page4, text="Vérifier la mission", command=lambda: check_mission_interface(mission))
 btn_check_mission.place(x=400, y=350)
-scroll_waypoint = ctk.CTkScrollableFrame(frame_page4, height=600,width=300)
+scroll_waypoint = ctk.CTkScrollableFrame(frame_page4, height=600,width=scroll_width)
 scroll_waypoint.place(x=10, y=10)
 
 
