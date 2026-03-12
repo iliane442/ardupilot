@@ -228,7 +228,7 @@ def take_off(master,alt=None,thr_max=100,pitch=None,initial_pitch=None):
 	yaw = etat["yaw"]
 	altitude= altitude_ini-1
 	alt_decol=altitude_ini+alt
-	vit_min=get_vit_min(master,5)
+	vit_min=fct.get_vit_min(master,5)
 	
 
 	params_takeoff = {
@@ -324,6 +324,7 @@ def get_vit_min(master,masse,roll_angle=0):
 	S_alaire=0.43 #m^2
 	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
 	return vit_min
+
 
 
 
