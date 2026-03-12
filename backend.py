@@ -1,6 +1,9 @@
 from pymavlink import mavutil
 import time
-from math import radians
+import math
+from transforms3d.euler import euler2quat
+from math import radians, sqrt, degrees, copysign
+import fonctions as fct
 
 
 
@@ -14,6 +17,9 @@ class waypoint:
 
     def __str__(self):
         return f": lat={self.lat}, long={self.long}, alt={self.alt}, radius={self.radius}, command={self.command}"
+
+
+## Verification des composants   
 
 def battery_verification(master):
 
@@ -92,82 +98,254 @@ def pre_verification(master):
 
     return True 
 
+	
+#==========Check et envoi de la mission==========
+
+def distance_meters(wp1,wp2):            ## pour calculer la distance entre deux waypoints ( sans prendre en compte l'altitude)
+    R = 6371000  # rayon de la Terre en mètres
+    phi1 = math.radians(wp1.lat)
+    phi2 = math.radians(wp2.lat)
+    delta_phi = math.radians(wp2.lat - wp1.lat)
+    delta_lambda = math.radians(wp2.long - wp1.long)
+    
+    a = math.sin(delta_phi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda/2)**2        ## formule de haversine 
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    horizontal_distance = R * c
+    return horizontal_distance
+
+def check_radius(wp1,wp2):
+    horizontal_distance = distance_meters(wp1,wp2)
+    vertical_distance = wp2.alt - wp1.alt
+    real_distance = math.sqrt(horizontal_distance**2 + vertical_distance**2)
+    if real_distance < (wp2.radius * 1.5):                ## coefficient de sécurité 
+        return False 
+    else:
+        return True
+		
+
+def check_mission(mission):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
+    
+    if mission[-1].command != 'LAND':                 			## vérification qu'on atterrit bien 
+        print('la dernière commande doit être un atterissage')
+        return False
+
+    for i in range(len(mission) - 1):
+        wp_current = mission[i]
+        wp_next = mission[i + 1]
+
+        if not check_radius(wp_current, wp_next):              	 ## si deux waypoints sont trop proches 
+            print('la mission n est pas valide car deux checkpoints sont trop rapprochés')
+            return False
+        
+        if wp_current.alt > 100 or wp_current.alt < 0:                                     ## en france, on ne peut pas voler à plus de 120 mètre de hauteur (inclue un coef de sécurité)
+            print(f"Waypoint {i} trop haut ou trop bas : {wp_current.alt} m")
+            return False    
+        
+    return True 
+
+def add_home_waypoint(master, mission):
+
+    for _ in range(10):
+        message = master.recv_match(type ='GLOBAL_POSITION_INT', blocking = True, timeout = 1)        
+        if message:
+            lat = message.lat / 1e7
+            long = message.lon / 1e7
+            alt = message.relative_alt / 1000                       ## attention à ce que le GPS soit opérationnel avant de faire ca 
+            home_waypoint = waypoint(lat,long, alt)
+            mission.insert(0, home_waypoint)
+            print(f'HOME = {lat}, {long}, {alt}')
+            return True 
+
+    print(' Impossible de recuperer la position Home ')
+    return False
+	
+def translate_wp_command_in_Mav_command(wp):			## Les paramètres d'envoi ne sont pas les mêmes selon la commande du waypoint
+
+    if wp.command == 'WAYPOINT':
+        cmd = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
+        param1 = 0          
+        param2 = wp.radius  # acceptance radius (m)
+        param3 = 0          
+        param4 = 0          
+        return cmd, param1, param2, param3, param4
+    
+    elif wp.command == 'TAKEOFF':
+        cmd = mavutil.mavlink.MAV_CMD_NAV_TAKEOFF
+        param1 = 15         # pitch de montée 
+        param2 = 0
+        param3 = 0
+        param4 = 0
+        return cmd, param1, param2, param3, param4
+
+    elif wp.command == 'LAND':
+        cmd = mavutil.mavlink.MAV_CMD_NAV_LAND
+        param1 = 0          
+        param2 = 0          
+        param3 = 0
+        param4 = 0
+        return cmd, param1, param2, param3, param4
+    
+    else:
+        print('error on waypoints')
+        return None
+
+
+def send_mission(master, mission):																## Il faut être en mode automatique et véhicule armé. Pour la récupérer sur Mission Planner : " read wp" dans l'onglet Plans
+    master.mav.mission_clear_all_send( master.target_system, master.target_component)           ## permet d'effacer une potentielle mission déjà existante
+
+    master.mav.mission_count_send( master.target_system, master.target_component,               ## on prépare l'envoie d'un certains nombres de waypoints 
+    len(mission),
+    mavutil.mavlink.MAV_MISSION_TYPE_MISSION )
+
+
+    waypoints_sent = set()  # garder la trace des seq déjà envoyés
+
+    while len(waypoints_sent) < len(mission):                                                   ## on fait ca si il y a eu une erreur et que le controlleur redemande le point 
+        msg = master.recv_match( type=['MISSION_REQUEST','MISSION_REQUEST_INT'], blocking=True)
+        if msg is None:
+            print('Impossible de lire les donnees de la missions')
+            return False 
+        else: 
+            seq = msg.seq
+
+            wp = mission[seq]
+            cmd, p1, p2, p3, p4 = translate_wp_command_in_Mav_command(wp)
+            master.mav.mission_item_int_send(master.target_system, master.target_component,
+            seq,
+            mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+            cmd,
+            0, 1, p1, p2, p3, p4,
+            int(wp.lat*1e7),
+            int(wp.long*1e7),
+            wp.alt,
+            mavutil.mavlink.MAV_MISSION_TYPE_MISSION)
+
+            waypoints_sent.add(seq)
+
+    ack = master.recv_match(type='MISSION_ACK', blocking=True, timeout = 10)
+    
+    if ack is None:
+        print("erreur dans l upload de la mission")
+        return False 
+    else:
+        print('la mission a bien été uploadé sur le controleur de vol')
+        time.sleep(5)
+        return True 
+	
 #==========Décollage==========
 
-def take_off(master,alt=None,thr_max=None,pitch=None,initial_pitch=None):
+def take_off(master,alt=None,thr_max=100,pitch=None,initial_pitch=None):
+
+#Variables internes
+
+	rep=""
+	pitch_dec=0
+	etat = fct.get_attitude(master)
+	altitude_ini = etat["altitude"]
+	vit = etat["vitesse"]
+	yaw = etat["yaw"]
+	altitude= altitude_ini-1
+	alt_decol=altitude_ini+alt
+	vit_min=fct.get_vit_min(master,5)
+	
+
 	params_takeoff = {
-    "TKOFF_ALT": alt,        # altitude cible 80 m
-    "TKOFF_LVL_ALT": alt,    # Distance de maintien obligatoire en position horizontale
+    "TKOFF_ALT": alt_decol,        # altitude cible 
+    "TKOFF_LVL_ALT": altitude_ini,    # Distance de maintien obligatoire en position horizontale
     "TKOFF_LVL_PITCH": pitch,  # pitch de montée
     "TKOFF_GND_PITCH": initial_pitch,   # pitch au sol
     "TKOFF_THR_MINACC": 0,  # accélération minimale
     "TKOFF_THR_MAX": thr_max,   # throttle max
 }
-	rep=""
+
+#Mesure de sécurité
+
 	if alt> 120:
 		return print(f"erreur {alt} ne peut pas etre spérieur à 120m")
-	if thr_max< 50:
+	if thr_max!=None and thr_max< 50:
 		while rep not in ["y","Y","n","N"]:
 			rep=input("attention la poussée max est inférieure au minimum recommandé. Voulez vous continuer ? :(Y/N)")
 		if rep=="n" or rep=="N":
 			return print("procédure de décollage interrompue")
 		elif rep=="y" or rep=="Y":
 			print("Validation")
+
+#Envoi des paramètres de décollage à mission planner
+
 	for name, value in params_takeoff.items():
 		if value is not None:
-			co.set_param(master,name, value)
-	co.armed(master,1)
-	while altitude<alt:
-		msg = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
-		altitude = msg.relative_alt / 1000
-		co.set_mode(master,'TAKEOFF')
-	co.set_mode(master,'GUIDED')
-	
+			fct.set_param(master,name, value)
 
-#==========Controle d'attitude==========
+#Décollage
 
-def send_altitude(master,roll, pitch, yaw, thrust):
+	fct.set_mode(master,'TAKEOFF')
+	while altitude<altitude_ini+5 and vit<vit_min:
+		etat = fct.get_attitude(master)
+		altitude = etat["altitude"]
+		vit = etat["vitesse"]
+		time.sleep(0.1)
+	fct.set_mode(master,'GUIDED')
+	while altitude < alt_decol:
+		altitude = fct.get_attitude(master)["altitude"]
+		pitch_dec+=1
+		fct.send_attitude(master,1,15,0,0.7)
+		time.sleep(0.1)
 
-	roll_rad  = radians(roll)
-	pitch_rad = radians(pitch)
-	yaw_rad   = radians(yaw)
+#==========Virage==========
 
-	q = euler2quat(roll_rad, pitch_rad, yaw_rad)
-	master.mav.set_attitude_target_send(
-        0,
-        master.target_system,
-        master.target_component,
-        0b00000111,
-        q,
-        0,0,0,
-        thrust
-    )
-
-def virage(master,angle=-30):
-	co.set_mode(master,'GUIDED')
-	if angle<0:
-		print("Virage gauche")
-	if angle>0:
-		print("Virage droite")
-	if angle == 0 :
-		print("stabilise")
-	for i in range(30):
-		send_attitude(master,
-            roll=angle,
-            pitch=5,
+def virage(master,angle=90,inclinaison=30):
+	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
+	yaw = degrees(msg_ang.yaw)
+	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
+	fct.set_mode(master,'GUIDED')
+	while abs(yaw_target-yaw)>3:
+		yaw = fct.get_attitude(master)["yaw"]
+		fct.send_attitude(master,
+            roll=inclinaison,
+            pitch=0,
             yaw=0,
-            thrust=0.6
+            thrust=0.5
         )
-	time.sleep(0.1)
+		time.sleep(0.05)
 
-def set_mode(master, mode_name):
-    if mode_name not in master.mode_mapping():   # pour checker si le mode existe
-        print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
-        return False
+#==========Virage en S==========
 
-    mode_id = master.mode_mapping()[mode_name] # on recupere l'identifiant parmis tous les modes
+def S_turn(master,nb_boucle,inclinaison):
+	virage(master,90,inclinaison)
+	for i in range (nb_boucle):
+		virage(master,180,-1*inclinaison)
+		virage(master,180,inclinaison)
+	virage(master,90,-1*inclinaison)
 
-    master.mav.set_mode_send(
-        master.target_system,
-        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-        mode_id)
+#=========Controle de vitesse==========
+
+def get_vit_min(master,masse,roll_angle=0):
+#30° d’inclinaison = vitesse de décrochage majorée de 10 %
+#45° d’inclinaison = vitesse de décrochage majorée de 20 %
+#60° d’inclinaison = vitesse de décrochage majorée de 40 %
+#source: https://staysafe.aero/fr/base-to-final-all-you-need-is-speed/
+	
+	if abs(roll_angle)<30:
+		coef_maj=1.1
+	elif abs(roll_angle)<45:
+		coef_maj=1.2
+	elif abs(roll_angle)<60:
+		coef_maj=1.4
+	else:
+		print ("décrochage fortement probable arrêt de la manoeuvre")
+		for i in range (30):
+			virage(master,0,0)
+			time.sleep(0.1) 
+	P=masse*9.81 #N
+	rho=1 #kg/m^3
+	Cp_max=1.2 #Coefficient de portance maximum 
+	S_alaire=0.43 #m^2
+	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
+	return vit_min
+
+
+
+
+
+
+
