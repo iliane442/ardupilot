@@ -4,7 +4,8 @@ import tkinter as tk
 from backend import pre_verification, waypoint
 from functions import nettoyage,close,connection_vehicle2,lancement_sitl,armed
 
-number = 0
+num_maneuvres = 0
+num_waypoints = 0
 dico={}
 arm=False
 master = None
@@ -20,18 +21,29 @@ def affichage_liste_maneuvres():
     for el in dico.keys():
         dico[el][1].grid(row=(el), column=0, sticky='w', pady=10)
 
+def affichage_liste(dic):
+    for el in dic.keys():
+        dic[el][1].grid(row=(el), column=0, sticky='w', pady=10)
+
+def ajouter_maneuvre_dico(val,dic,num,page):
+    dic[num]=[val]
+    item = ctk.CTkLabel(page, text=f" {num}:{dic[num][0]}", font=("Arial", 12), text_color="green")
+    dic[num].append(item)
+    affichage_liste(dic)
+    num+=1
+    return num
 
 def ajouter_maneuvre(choix):
-    global number	
-    dico[number] = [choix]
-    item = ctk.CTkLabel(page_maneuvres, text=f" {number}:{dico[number][0]}", font=("Arial", 12), text_color="green")
-    dico[number].append(item)
+    global num_maneuvres	
+    dico[num_maneuvres] = [choix]
+    item = ctk.CTkLabel(page_maneuvres, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green")
+    dico[num_maneuvres].append(item)
     affichage_liste_maneuvres()
-    number += 1
+    num_maneuvres += 1
 
 def suppression_maneuvre():
       global dico
-      global number
+      global num_maneuvres
       try:
         assert entree.get().isdigit(), "Veuillez entrer un nombre entier valide."
         assert int(entree.get()) in dico.keys(), "Aucune manœuvre correspondante à ce numéro."
@@ -85,6 +97,7 @@ def connection_vehicle():
     master = connection_vehicle2()
 
 def recuperer_valeurs():
+    global num_waypoints,mission,dic_mission
     try:
         assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
         assert all(entry.get().isdigit() for entry in liste_entries[:-1]), "Veuillez entrer des valeurs numériques valides pour l'altitude, la latitude, la longitude et le rayon."
@@ -94,7 +107,7 @@ def recuperer_valeurs():
             create_waypoint.append(entry.get())
         create_waypoint.append(menu2.get())
         mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
-        print(mission)
+        num_waypoints = ajouter_maneuvre_dico(mission[-1],dic_mission,num_waypoints,frame_page4)
     except AssertionError as e:
         item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
         item.place(x=400, y=300)
@@ -163,7 +176,7 @@ frame4_btn_retour.place(x=10, y=10)
 noms_parametres = ["Altitude (m)", "Latitude(°)", "Longitude(°)", "rayon (m)", "commande"]
 liste_entries = []
 
-# Création du tableau de création de waypont
+# Création du tableau de création de waypoint
 for i in range(len(noms_parametres)-1):
     # Label (colonne 0)
     label = ctk.CTkLabel(frame_page4, text=noms_parametres[i])
@@ -173,7 +186,7 @@ for i in range(len(noms_parametres)-1):
     entry.place(x=500, y=50*i+50)
     liste_entries.append(entry) # On garde une trace de l'entry
 label = ctk.CTkLabel(frame_page4, text=noms_parametres[4])
-label.place(x=400, y=200)
+label.place(x=400, y=250)
 # Menu déroulant pour la commande
 menu2 = ctk.CTkOptionMenu(frame_page4, 
                          values=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"])

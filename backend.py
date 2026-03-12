@@ -12,6 +12,8 @@ class waypoint:
         self.radius = radius            ## rayon autour duquel l'avion considère qu'il est passé par le checkpoint
         self.command = command 
 
+    def __str__(self):
+        return f": lat={self.lat}, long={self.long}, alt={self.alt}, radius={self.radius}, command={self.command}"
 
 def battery_verification(master):
 
