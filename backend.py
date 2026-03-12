@@ -98,6 +98,36 @@ def pre_verification(master):
 
     return True 
 
+def ask_for_failsafes(master, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, battery_failsafe_threshold, failsafe_threshold):
+    
+    if not GPS_verification(master):
+        GPS_failsafe_counter += 1
+        print(f"GPS faible depuis {GPS_failsafe_counter} cycles")
+    else:
+        GPS_failsafe_counter = 0  # reset compteur si GPS OK
+
+    if GPS_failsafe_counter >=  failsafe_threshold:
+        print("Failsafe GPS")
+        return False 
+    
+    if not battery_verification(master, blocking = False):
+        battery_failsafe_counter += 1 
+    else:
+        battery_failsafe_counter = 0 
+    if battery_failsafe_counter > battery_failsafe_threshold:
+        print('Failsafe batterie')
+        return False 
+    
+    if not sensors_verification(master, blocking = False):
+        sensors_failsafe_counter += 1
+    else: 
+        sensors_failsafe_counter = 0 
+    if sensors_failsafe_counter > failsafe_threshold:
+        print('Failsafe sur les capteurs')
+        return False
+        
+    return True 
+
 	
 #==========Check et envoi de la mission==========
 
@@ -227,6 +257,34 @@ def send_mission(master, mission):																## Il faut être en mode autom
         print('la mission a bien été uploadé sur le controleur de vol')
         time.sleep(5)
         return True 
+		
+#==========Passage en mode manuel si failsafe==========
+
+def pilot_override_detected(msg):
+    if abs(msg.chan1_raw - 1500) > deadband:  # Roll
+        return True
+    if abs(msg.chan2_raw - 1500) > deadband:  # Pitch
+        return True
+    if abs(msg.chan4_raw - 1500) > deadband:  # Yaw
+        return True
+    return False
+
+def wait_for_pilot_signals(master):
+    global override_counter
+    override_threshold = 4 
+    msg = master.recv_match(type='RC_CHANNELS', blocking=False)
+
+    if not msg:
+        return False
+    if pilot_override_detected(msg):
+        override_counter += 1
+    else:
+        override_counter = 0
+    if override_counter >= override_threshold:
+        set_mode(master, 'MANUAL')
+        return True
+
+    return False
 	
 #==========Décollage==========
 
@@ -338,6 +396,7 @@ def get_vit_min(master,masse,roll_angle=0):
 	S_alaire=0.43 #m^2
 	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
 	return vit_min
+
 
 
 
