@@ -398,6 +398,71 @@ def get_vit_min(master,masse,roll_angle=0):
 	return vit_min
 
 
+## MAIN TEMPORAIRE
+
+def main():
+    GPS_failsafe_counter = 0
+    sensors_failsafe_counter = 0
+    battery_failsafe_counter = 0  
+    failsafe_threshold= 10                                       ## nombre de cycles consécutifs avant déclenchement d'un failsafe
+    battery_failsafe_threshold = 25 
+    override_counter = 0 
+
+
+    mission = [ 
+    waypoint(-35.3632623, 149.1652376, 40, command='TAKEOFF'),
+    waypoint(-35.3640, 149.1660, 60),                     # ~120 m nord-est
+    waypoint(-35.3650, 149.1665, 70),                     # ~200 m plus loin
+    waypoint(-35.3645, 149.1650, 60),                     # retour vers piste
+    waypoint(-35.3635, 149.1652, 0, command='LAND')
+    ]                                                           ## exemple de mission 
+
+    if check_mission(mission) == False:                                     
+        return
+
+    print("Connexion à l'avion sur le port 14552...")
+    master = mavutil.mavlink_connection('udpin:127.0.0.1:14552')            # Connexion au SITL
+
+    master.wait_heartbeat()                                                 # Attente du Heartbeat 
+    print(f"Cible trouvée ! Système {master.target_system}, Composant {master.target_component}")
+
+    if not pre_verification(master):                                        ## on verifie tout avant de continuer 
+        print("Pré-vol échoué : vérifications non OK")
+        return  
+    else:
+        print("Pré-vol OK : tout est prêt pour décoller") 
+    
+    vehicule_armed(master, 1)
+
+    add_home_waypoint(master, mission)
+
+    set_mode(master, "AUTO")            
+    if send_mission(master, mission) == False:                              ## détail : la mission s'envoie sur l'autopilote, mais pour que mission planner la récupere, il faut appuyer sur Read wp
+        return 
+
+    move_on_landing_strip(master)
+
+    try:     
+        while True: 
+            bool_vehicule_operational = ask_for_failsafes(master, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, battery_failsafe_threshold, failsafe_threshold)
+            time.sleep(1)
+            if bool_vehicule_operational: 
+                print('test')   ## PARTIE DU CODE POUR METTRE LES MANOEUVRES
+            else: 
+                set_mode(master, 'LOITER' )
+                print("Failsafe actif, en attente d'intervention pilote")
+                
+                start_time = time.time()
+                while not wait_for_pilot_signals(master):
+                    if time.time() - start_time > 60:
+                        set_mode(master,'LAND')                 ## atterrissage d'urgence si le pilote ne prend pas la situation en main 
+                        print('pas de pilote détécté, atterrissage forcé')
+                        return
+                    time.sleep(0.25)
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nDéconnexion.")
+        return 
 
 
 
