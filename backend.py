@@ -13,6 +13,9 @@ class waypoint:
         self.command = command 
 
 
+
+## Verification des composants   
+
 def battery_verification(master):
 
     message = master.recv_match(type='SYS_STATUS', blocking=True, timeout=2)
@@ -90,6 +93,101 @@ def pre_verification(master):
 
     return True 
 
+	
+#==========Check et envoi de la mission==========
+
+def check_mission(mission):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
+    
+    if mission[-1].command != 'LAND':                 			## vérification qu'on atterrit bien 
+        print('la dernière commande doit être un atterissage')
+        return False
+
+    for i in range(len(mission) - 1):
+        wp_current = mission[i]
+        wp_next = mission[i + 1]
+
+        if not check_radius(wp_current, wp_next):              	 ## si deux waypoints sont trop proches 
+            print('la mission n est pas valide car deux checkpoints sont trop rapprochés')
+            return False
+        
+        if wp_current.alt > 100 or wp_current.alt < 0:                                     ## en france, on ne peut pas voler à plus de 120 mètre de hauteur (inclue un coef de sécurité)
+            print(f"Waypoint {i} trop haut ou trop bas : {wp_current.alt} m")
+            return False    
+        
+    return True 
+
+def translate_wp_command_in_Mav_command(wp):			## Les paramètres d'envoi ne sont pas les mêmes selon la commande du waypoint
+
+    if wp.command == 'WAYPOINT':
+        cmd = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
+        param1 = 0          
+        param2 = wp.radius  # acceptance radius (m)
+        param3 = 0          
+        param4 = 0          
+        return cmd, param1, param2, param3, param4
+    
+    elif wp.command == 'TAKEOFF':
+        cmd = mavutil.mavlink.MAV_CMD_NAV_TAKEOFF
+        param1 = 15         # pitch de montée 
+        param2 = 0
+        param3 = 0
+        param4 = 0
+        return cmd, param1, param2, param3, param4
+
+    elif wp.command == 'LAND':
+        cmd = mavutil.mavlink.MAV_CMD_NAV_LAND
+        param1 = 0          
+        param2 = 0          
+        param3 = 0
+        param4 = 0
+        return cmd, param1, param2, param3, param4
+    
+    else:
+        print('error on waypoints')
+        return None
+
+
+def send_mission(master, mission):																## Il faut être en mode automatique et véhicule armé. Pour la récupérer sur Mission Planner : " read wp" dans l'onglet Plans
+    master.mav.mission_clear_all_send( master.target_system, master.target_component)           ## permet d'effacer une potentielle mission déjà existante
+
+    master.mav.mission_count_send( master.target_system, master.target_component,               ## on prépare l'envoie d'un certains nombres de waypoints 
+    len(mission),
+    mavutil.mavlink.MAV_MISSION_TYPE_MISSION )
+
+
+    waypoints_sent = set()  # garder la trace des seq déjà envoyés
+
+    while len(waypoints_sent) < len(mission):                                                   ## on fait ca si il y a eu une erreur et que le controlleur redemande le point 
+        msg = master.recv_match( type=['MISSION_REQUEST','MISSION_REQUEST_INT'], blocking=True)
+        if msg is None:
+            print('Impossible de lire les donnees de la missions')
+            return False 
+        else: 
+            seq = msg.seq
+
+            wp = mission[seq]
+            cmd, p1, p2, p3, p4 = translate_wp_command_in_Mav_command(wp)
+            master.mav.mission_item_int_send(master.target_system, master.target_component,
+            seq,
+            mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+            cmd,
+            0, 1, p1, p2, p3, p4,
+            int(wp.lat*1e7),
+            int(wp.long*1e7),
+            wp.alt,
+            mavutil.mavlink.MAV_MISSION_TYPE_MISSION)
+
+            waypoints_sent.add(seq)
+
+    ack = master.recv_match(type='MISSION_ACK', blocking=True, timeout = 10)
+    
+    if ack is None:
+        print("erreur dans l upload de la mission")
+        return False 
+    else:
+        print('la mission a bien été uploadé sur le controleur de vol')
+        time.sleep(5)
+        return True 
 #==========Décollage==========
 
 def take_off(master,alt=None,thr_max=None,pitch=None,initial_pitch=None):
@@ -168,4 +266,5 @@ def set_mode(master, mode_name):
     master.mav.set_mode_send(
         master.target_system,
         mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+
         mode_id)
