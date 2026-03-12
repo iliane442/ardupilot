@@ -2,7 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 
 from backend import pre_verification,check_mission, waypoint
-from functions import nettoyage,close,connection_vehicle2,lancement_sitl,armed
+from functions import nettoyage,connection_vehicle2,lancement_sitl,armed
 
 num_maneuvres = 0
 num_waypoints = 0
@@ -99,19 +99,36 @@ def connection_vehicle():
 def recuperer_valeurs():
     global num_waypoints,mission,dic_mission
     try:
-        assert all(float(entry.get()) for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
+        print(liste_entries)
+        assert all(float(entry.get()) for entry in liste_entries), "Veuillez mettre des int/float tous les champs avant de valider la mission."
         assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
         assert menu2.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
         create_waypoint = []
         for entry in liste_entries:
             create_waypoint.append(float(entry.get()))
+            entry.delete(0, tk.END)  # Effacer le contenu de l'entry après récupération
         create_waypoint.append(menu2.get())
+        menu2.set("ajouter une commande") # Réinitialiser le menu déroulant
         mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
         num_waypoints = ajouter_maneuvre_dico(mission[-1],dic_mission,num_waypoints,frame_page4)
+
     except AssertionError as e:
         item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
         item.place(x=400, y=300)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur
+
+def check_mission_interface(mission):
+    try :
+        assert len(mission)!=0, "La mission est vide. Veuillez ajouter au moins un waypoint avant de vérifier la mission."
+        msg = check_mission(mission)
+        item = ctk.CTkLabel(frame_page4, text=msg, font=("Arial", 12), text_color="green" if msg == "Mission valide" else "red")
+        item.place(x=400, y=400)
+        app.after(3000, item.destroy)  # Supprimer le message après 3 secondes
+    except AssertionError as e:
+        item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
+        item.place(x=200, y=400)
+        app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes
+
 
 
 # 2. Création de la fenêtre principale
@@ -172,7 +189,7 @@ frame2_del_man.place(x=400, y=110)
 # Ajout de waypoints
 frame_page4 = ctk.CTkFrame(app)
 frame4_btn_retour = ctk.CTkButton(frame_page4, text="Retour", command=lambda: afficher_page(frame_page4,frame_page1), fg_color="gray")
-frame4_btn_retour.place(x=10, y=10)
+frame4_btn_retour.place(x=400, y=10)
 noms_parametres = ["Altitude (m)", "Latitude(°)", "Longitude(°)", "rayon (m)", "commande"]
 liste_entries = []
 
@@ -197,7 +214,7 @@ menu2.place(x=500, y=250)
 btn_valider = ctk.CTkButton(frame_page4, text="Valider le Waypoint", command=recuperer_valeurs)
 btn_valider.place(x=400, y=300)
 
-btn_check_mission = ctk.CTkButton(frame_page4, text="Vérifier la mission", command=lambda: check_mission(mission))
+btn_check_mission = ctk.CTkButton(frame_page4, text="Vérifier la mission", command=lambda: check_mission_interface(mission))
 btn_check_mission.place(x=400, y=350)
 
 

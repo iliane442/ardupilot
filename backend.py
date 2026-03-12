@@ -126,22 +126,18 @@ def check_radius(wp1,wp2):
 def check_mission(mission):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
     
     if mission[-1].command != 'LAND':                 			## vérification qu'on atterrit bien 
-        print('la dernière commande doit être un atterissage')
-        return False
+        return 'la dernière commande doit être un atterissage'
 
     for i in range(len(mission) - 1):
         wp_current = mission[i]
         wp_next = mission[i + 1]
 
         if not check_radius(wp_current, wp_next):              	 ## si deux waypoints sont trop proches 
-            print('la mission n est pas valide car deux checkpoints sont trop rapprochés')
-            return False
+            return 'la mission n est pas valide car deux checkpoints sont trop rapprochés'
         
         if wp_current.alt > 100 or wp_current.alt < 0:                                     ## en france, on ne peut pas voler à plus de 120 mètre de hauteur (inclue un coef de sécurité)
-            print(f"Waypoint {i} trop haut ou trop bas : {wp_current.alt} m")
-            return False    
-        
-    return True 
+            return f"Waypoint {i} trop haut ou trop bas : {wp_current.alt} m"        
+    return 'Mission valide' 
 
 def add_home_waypoint(master, mission):
 
