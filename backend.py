@@ -96,6 +96,28 @@ def pre_verification(master):
 	
 #==========Check et envoi de la mission==========
 
+def distance_meters(wp1,wp2):            ## pour calculer la distance entre deux waypoints ( sans prendre en compte l'altitude)
+    R = 6371000  # rayon de la Terre en mètres
+    phi1 = math.radians(wp1.lat)
+    phi2 = math.radians(wp2.lat)
+    delta_phi = math.radians(wp2.lat - wp1.lat)
+    delta_lambda = math.radians(wp2.long - wp1.long)
+    
+    a = math.sin(delta_phi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda/2)**2        ## formule de haversine 
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    horizontal_distance = R * c
+    return horizontal_distance
+
+def check_radius(wp1,wp2):
+    horizontal_distance = distance_meters(wp1,wp2)
+    vertical_distance = wp2.alt - wp1.alt
+    real_distance = math.sqrt(horizontal_distance**2 + vertical_distance**2)
+    if real_distance < (wp2.radius * 1.5):                ## coefficient de sécurité 
+        return False 
+    else:
+        return True
+		
+
 def check_mission(mission):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
     
     if mission[-1].command != 'LAND':                 			## vérification qu'on atterrit bien 
@@ -268,3 +290,4 @@ def set_mode(master, mode_name):
         mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
 
         mode_id)
+
