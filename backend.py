@@ -261,7 +261,7 @@ def send_mission(master, mission):																## Il faut être en mode autom
 #==========Passage en mode manuel si failsafe==========
 
 def pilot_override_detected(msg):
-	deadband = 50
+    deadband = 50
     if abs(msg.chan1_raw - 1500) > deadband:  # Roll
         return True
     if abs(msg.chan2_raw - 1500) > deadband:  # Pitch
@@ -282,7 +282,7 @@ def wait_for_pilot_signals(master):
     else:
         override_counter = 0
     if override_counter >= override_threshold:
-        set_mode(master, 'MANUAL')
+        fct.set_mode(master, 'MANUAL')
         return True
 
     return False
@@ -397,6 +397,7 @@ def get_vit_min(master,masse,roll_angle=0):
 	S_alaire=0.43 #m^2
 	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
 	return vit_min
+
 
 
 
