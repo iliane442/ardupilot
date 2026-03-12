@@ -3,6 +3,7 @@ import time
 import math
 from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
+import fonctions as fct
 
 
 
@@ -212,86 +213,6 @@ def send_mission(master, mission):																## Il faut être en mode autom
         print('la mission a bien été uploadé sur le controleur de vol')
         time.sleep(5)
         return True 
-
-#==========Controle du Mode==========
-
-def set_mode(master, mode_name):
-    if mode_name not in master.mode_mapping():   # pour checker si le mode existe
-        print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
-        return False
-
-    mode_id = master.mode_mapping()[mode_name] # on recupere l'identifiant parmis tous les modes
-
-    master.mav.set_mode_send(
-        master.target_system,
-        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-
-        mode_id)
-
-#==========Controle d'attitude==========
-
-def send_altitude(master,roll, pitch, yaw, thrust):
-
-	roll_rad  = radians(roll)
-	pitch_rad = radians(pitch)
-	yaw_rad   = radians(yaw)
-
-	q = euler2quat(roll_rad, pitch_rad, yaw_rad)
-	master.mav.set_attitude_target_send(
-        0,
-        master.target_system,
-        master.target_component,
-        0b00000111,
-        q,
-        0,0,0,
-        thrust
-    )
-
-#==========Lecture Attitude==========
-
-def get_attitude(master):
-	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
-	yaw = degrees(msg_ang.yaw)
-	roll=degrees(msg_ang.roll)
-	pitch=degrees(msg_ang.pitch)
-
-	msg_pos = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
-	altitude = msg_pos.relative_alt / 1000
-
-	msg_vit = master.recv_match(type='VFR_HUD', blocking=True)
-	vit=msg_vit.groundspeed	
-
-	return {
-        "yaw": yaw,
-        "roll": roll,
-        "pitch": pitch,
-        "altitude": altitude,
-        "vitesse": vit
-    }
-
-#==========Lecture Mode==========
-
-def read_mode(master):
-
-	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
-	mode_id = msg.custom_mode # Récupère l'id du mode actuel 
-	modes=master.mode_mapping() # Dresse le dictionnaire des modes possibles 
-	mode_name= [name for name, id in modes.items() if id == mode_id][0]# Cherche la correspondance entre l'id reçu et le mode dans le dictionnaire des modes
-	print(f"Mode actuel, Id : {mode_name},{mode_id}") 
-	return [mode_name,mode_id]
-
-#==========Modification de paramètres==========
-
-def set_param(master,name, value):
-	print(f"Envoi de {name} = {value}")
-	master.mav.param_set_send(
-        master.target_system,
-        master.target_component,
-        name.encode('utf-8'),
-        float(value),
-        mavutil.mavlink.MAV_PARAM_TYPE_REAL32
-)
-
 	
 #==========Décollage==========
 
@@ -301,7 +222,7 @@ def take_off(master,alt=None,thr_max=100,pitch=None,initial_pitch=None):
 
 	rep=""
 	pitch_dec=0
-	etat = get_attitude(master)
+	etat = fct.get_attitude(master)
 	altitude_ini = etat["altitude"]
 	vit = etat["vitesse"]
 	yaw = etat["yaw"]
@@ -335,21 +256,21 @@ def take_off(master,alt=None,thr_max=100,pitch=None,initial_pitch=None):
 
 	for name, value in params_takeoff.items():
 		if value is not None:
-			set_param(master,name, value)
+			fct.set_param(master,name, value)
 
 #Décollage
 
-	set_mode(master,'TAKEOFF')
+	fct.set_mode(master,'TAKEOFF')
 	while altitude<altitude_ini+5 and vit<vit_min:
-		etat = get_attitude(master)
+		etat = fct.get_attitude(master)
 		altitude = etat["altitude"]
 		vit = etat["vitesse"]
 		time.sleep(0.1)
-	set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED')
 	while altitude < alt_decol:
-		altitude = get_attitude(master)["altitude"]
+		altitude = fct.get_attitude(master)["altitude"]
 		pitch_dec+=1
-		send_attitude(master,1,15,0,0.7)
+		fct.send_attitude(master,1,15,0,0.7)
 		time.sleep(0.1)
 
 #==========Virage==========
@@ -358,10 +279,10 @@ def virage(master,angle=90,inclinaison=30):
 	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
 	yaw = degrees(msg_ang.yaw)
 	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
-	co.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED')
 	while abs(yaw_target-yaw)>3:
-		yaw = get_attitude(master)["yaw"]
-		send_attitude(master,
+		yaw = fct.get_attitude(master)["yaw"]
+		fct.send_attitude(master,
             roll=inclinaison,
             pitch=0,
             yaw=0,
@@ -377,6 +298,32 @@ def S_turn(master,nb_boucle,inclinaison):
 		virage(master,180,-1*inclinaison)
 		virage(master,180,inclinaison)
 	virage(master,90,-1*inclinaison)
+
+#=========Controle de vitesse==========
+
+def get_vit_min(master,masse,roll_angle=0):
+#30° d’inclinaison = vitesse de décrochage majorée de 10 %
+#45° d’inclinaison = vitesse de décrochage majorée de 20 %
+#60° d’inclinaison = vitesse de décrochage majorée de 40 %
+#source: https://staysafe.aero/fr/base-to-final-all-you-need-is-speed/
+	
+	if abs(roll_angle)<30:
+		coef_maj=1.1
+	elif abs(roll_angle)<45:
+		coef_maj=1.2
+	elif abs(roll_angle)<60:
+		coef_maj=1.4
+	else:
+		print ("décrochage fortement probable arrêt de la manoeuvre")
+		for i in range (30):
+			virage(master,0,0)
+			time.sleep(0.1) 
+	P=masse*9.81 #N
+	rho=1 #kg/m^3
+	Cp_max=1.2 #Coefficient de portance maximum 
+	S_alaire=0.43 #m^2
+	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
+	return vit_min
 
 
 
