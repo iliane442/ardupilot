@@ -4,6 +4,35 @@ import fonction as fct
 from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
 
+#=========Controle de vitesse==========
+
+def get_vit_min(master,masse,roll_angle=0):
+	'''
+	La fonction gère une vitesse de décrochage simplifié
+	30° d’inclinaison = vitesse de décrochage majorée de 10 %
+	45° d’inclinaison = vitesse de décrochage majorée de 20 %
+	60° d’inclinaison = vitesse de décrochage majorée de 40 %
+	source: https://staysafe.aero/fr/base-to-final-all-you-need-is-speed/
+	'''
+	
+	if abs(roll_angle)<30:
+		coef_maj=1.1
+	elif abs(roll_angle)<45:
+		coef_maj=1.2
+	elif abs(roll_angle)<60:
+		coef_maj=1.4
+	else:
+		print ("décrochage fortement probable arrêt de la manoeuvre")
+		for i in range (30):
+			virage(master,0,0)
+			time.sleep(0.1) 
+	P=masse*9.81 #N
+	rho=1 #kg/m^3
+	Cp_max=1.2 #Coefficient de portance maximum 
+	S_alaire=0.43 #m^2
+	vit_min = sqrt(2*P/(rho*S_alaire*Cp_max))*coef_maj
+	return vit_min
+
 #==========Décollage==========
 
 def take_off(master,alt = None,thr_max = 100,pitch = None,initial_pitch = None):
