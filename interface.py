@@ -27,6 +27,10 @@ def affichage_liste(dic):
     for el in dic.keys():
         dic[el][1].grid(row=(el), column=0, sticky='w', pady=10)
 
+def reset_scroll():
+    for widget in scroll_maneuvre.winfo_children():
+        widget.grid_forget()
+
 def create_waypoint(dic=dic_mission):
     global mission
     number_waypoints = len(dic)  # On utilise la longueur du dictionnaire pour déterminer le numéro du waypoint
@@ -102,9 +106,13 @@ def rafraichir_menu_selection():
 
 def choix_waypoint(choix):
     global dic_mission
-    identifiant = int(choix.split(":")[0].strip())
-    waypoint_selectionne = dic_mission[identifiant][0]
+    id = int(choix.split(":")[0].strip())
+    waypoint_selectionne = dic_mission[id][0]
+    dico_maneuvres = dic_mission[id][2]
+    #print(waypoint_selectionne)
     activ_wayp.configure(text=f"Waypoint sélectionné : {waypoint_selectionne}", text_color="cyan")
+    reset_scroll()
+    affichage_liste(dico_maneuvres)  # Affiche les manœuvres associées au waypoint sélectionné
 
 
 
