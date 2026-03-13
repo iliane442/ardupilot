@@ -1,6 +1,6 @@
 from pymavlink import mavutil
 import time
-import commande as co
+import fonction as fct
 from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
 
@@ -13,10 +13,10 @@ def take_off(master,alt = None,thr_max = 100,pitch = None,initial_pitch = None):
 	
 #Variables internes
 	rep=""
-	etat = get_attitude(master)
+	etat = fct.get_attitude(master)
 	alt_ini = etat["altitude"]
 	vit = etat["vitesse"]
-	vit_min = get_vit_min(master,5)
+	vit_min = fct.get_vit_min(master,5)
 
 	alt_cible = alt_ini+alt
 
@@ -50,12 +50,12 @@ def take_off(master,alt = None,thr_max = 100,pitch = None,initial_pitch = None):
 
 	co.set_mode(master,'TAKEOFF')
 	while vit < vit_min:
-		etat = get_attitude(master)
+		etat = fct.get_attitude(master)
 		vit = etat["vitesse"]
 		time.sleep(0.1)
 	co.set_mode(master,'GUIDED')
 	time.sleep(0.5)
-	stab = stabilite_alt(master,alt_cible)
+	stab = fct.stabilite_alt(master,alt_cible)
 	erreur = stab["erreur_cum"]
 	stabilite = stab["stabilite"]
 	thrust = stab["thrust"]
@@ -63,7 +63,7 @@ def take_off(master,alt = None,thr_max = 100,pitch = None,initial_pitch = None):
 	dt = stab["dt"]
 
 	while stabilite < 20:
-		stab=stabilite_alt(master,alt_cible,thrust,erreur,dt)
+		stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
 		if stab["stabilite"] == 0:
 			stabilite = 0
 		erreur = stab["erreur_cum"]
@@ -71,7 +71,7 @@ def take_off(master,alt = None,thr_max = 100,pitch = None,initial_pitch = None):
 		thrust = stab["thrust"]
 		pitch_stab = stab["pitch"]
 		dt = stab["dt"]
-		send_attitude(master,0,pitch_stab,0,thrust)
+		fct.send_attitude(master,0,pitch_stab,0,thrust)
 		time.sleep(dt)
 
 #==========Virage==========
@@ -84,10 +84,10 @@ def virage(master,angle=0,inclinaison=0):
 
 #Variables
 	
-	etat = get_attitude(master)
+	etat = fct.get_attitude(master)
 	yaw = etat["yaw"]
 	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
-	stab = stabilite_alt(master,alt_cible)
+	stab = fct.stabilite_alt(master,alt_cible)
 	erreur = stab["erreur_cum"]
 	stabilite = stab["stabilite"]
 	thrust = stab["thrust"]
@@ -97,15 +97,15 @@ def virage(master,angle=0,inclinaison=0):
 #Virage
 	co.set_mode(master,'GUIDED')
 	while abs((yaw_target-yaw+180)%360-180)>5:
-		etat = get_attitude(master)
+		etat = fct.get_attitude(master)
 		yaw = etat["yaw"]
-		stab=stabilite_alt(master,alt_cible,thrust,erreur,dt)
+		stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
 		erreur = stab["erreur_cum"]
 		thrust = stab["thrust"]
 		print(thrust)
 		pitch_stab = stab["pitch"]
 		dt = stab["dt"]
-		send_attitude(master,inclinaison,pitch_stab,0,thrust)
+		fct.send_attitude(master,inclinaison,pitch_stab,0,thrust)
 		time.sleep(dt)
 
 #==========Virage en S==========
