@@ -9,7 +9,7 @@ from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_par
 
 
 
-dico={}
+
 arm=False
 master = None
 mission = []
