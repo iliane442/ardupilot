@@ -68,6 +68,29 @@ def send_attitude(master,roll, pitch, yaw, thrust):
         0,0,0,
         thrust
     )
+
+#==========Lecture Attitude==========
+
+def get_attitude(master):
+	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
+	yaw = degrees(msg_ang.yaw)
+	roll=degrees(msg_ang.roll)
+	pitch=degrees(msg_ang.pitch)
+
+	msg_pos = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
+	altitude = msg_pos.relative_alt / 1000
+
+	msg_vit = master.recv_match(type='VFR_HUD', blocking=True)
+	vit=msg_vit.groundspeed	
+
+	return {
+        "yaw": yaw,
+        "roll": roll,
+        "pitch": pitch,
+        "altitude": altitude,
+        "vitesse": vit
+    }
+	
 #==========Stabilité altitude==========
 
 def stabilite_alt(master, alt_stab=60, thrust=0.5, erreur_cum=0, dt=0.05):
@@ -106,28 +129,7 @@ def stabilite_alt(master, alt_stab=60, thrust=0.5, erreur_cum=0, dt=0.05):
         "erreur_cum": erreur_cum,
         "dt": dt
     }
-#==========Lecture Attitude==========
-
-def get_attitude(master):
-	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
-	yaw = degrees(msg_ang.yaw)
-	roll=degrees(msg_ang.roll)
-	pitch=degrees(msg_ang.pitch)
-
-	msg_pos = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
-	altitude = msg_pos.relative_alt / 1000
-
-	msg_vit = master.recv_match(type='VFR_HUD', blocking=True)
-	vit=msg_vit.groundspeed	
-
-	return {
-        "yaw": yaw,
-        "roll": roll,
-        "pitch": pitch,
-        "altitude": altitude,
-        "vitesse": vit
-    }
-
+	
 #==========Modification de paramètres==========
 
 def set_param(master,name, value):
