@@ -35,7 +35,7 @@ def set_mode(master, mode_name):
 
 #==========Controle d'attitude==========
 
-def send_altitude(master,roll, pitch, yaw, thrust):
+def send_attitude(master,roll, pitch, yaw, thrust):
 
 	roll_rad  = radians(roll)
 	pitch_rad = radians(pitch)
