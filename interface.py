@@ -104,11 +104,10 @@ def rafraichir_menu_selection():
         options = [f"{k}: {v[0]}" for k, v in dic_mission.items()]
         menu_selection_waypoint.configure(values=options)
 
-def choix_waypoint(choix):
-    global dic_mission
+def choix_waypoint(choix,dico=dic_mission):
     id = int(choix.split(":")[0].strip())
-    waypoint_selectionne = dic_mission[id][0]
-    dico_maneuvres = dic_mission[id][2]
+    waypoint_selectionne = dico[id][0]
+    dico_maneuvres = dico[id][2]
     #print(waypoint_selectionne)
     activ_wayp.configure(text=f"Waypoint sélectionné : {waypoint_selectionne}", text_color="cyan")
     reset_scroll()
