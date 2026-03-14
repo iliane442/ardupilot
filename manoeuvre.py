@@ -146,4 +146,76 @@ def S_turn(master,nb_boucle=1,inclinaison=30):
 		virage(master,180,inclinaison)
 	virage(master,90,-1*inclinaison)
 
+#==========Changement d'altitude==========	
+
+def chgt_alt(master,hauteur = 0):
+
+#Variables Globale
+
+	global alt_cible
+
+#Vérifications
+
+	if alt_cible+hauteur >= 120:
+		return print ("commande ingnoré altitude max trop élevéeé")
+	else:
+		alt_cible=alt_cible+hauteur
+
+#Variables 
+#Stabilité
+	stab = fct.stabilite_alt(master,alt_cible)
+	erreur = stab["erreur_cum"]
+	stabilite = stab["stabilite"]
+	thrust = stab["thrust"]
+	pitch_stab = stab["pitch"]
+	dt = stab["dt"]
+#Altitude
+	etat = fct.get_attitude(master)
+	alt = etat["altitude"]
+	vit = etat["vitesse"]
+	vit_prec=vit
+
+	co.set_mode(master,'GUIDED')
+	while abs(alt-alt_cible)>3:
+		etat = fct.get_attitude(master)
+		vit = etat["vitesse"]
+		alt= etat["altitude"]
+		if vit>vit_prec*0.98:
+			fct.send_attitude(master,
+roll = 0,
+pitch = 30*copysign(1,hauteur),
+yaw = 0,
+thrust = 1
+        )
+			vit_prec=vit
+			time.sleep(dt)
+			print(vit)
+		else:
+			stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
+			erreur = stab["erreur_cum"]
+			stabilite += stab["stabilite"]
+			thrust = stab["thrust"]
+			pitch_stab = stab["pitch"]
+			fct.send_attitude(master,
+0,
+pitch_stab,
+0,
+thrust)
+			time.sleep(dt)
+			print("stabilisation")
+			
+	while stabilite < 20:
+		stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
+		if stab["stabilite"] == 0:
+			stabilite = 0
+		erreur = stab["erreur_cum"]
+		stabilite += stab["stabilite"]
+		thrust = stab["thrust"]
+		pitch_stab = stab["pitch"]
+		fct.send_attitude(master,
+0,
+pitch_stab,
+0,
+thrust)
+		time.sleep(dt)
 
