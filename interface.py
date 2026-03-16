@@ -360,6 +360,7 @@ activ_wayp.place(x=15, y=50)
 frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page(page_maneuvres,frame_page1), fg_color="gray")
 frame2_btn_retour.place(x=400, y=20)
 lab_maneuvres = ctk.CTkLabel(page_maneuvres, text="choisir une maneuvre", font=("Arial", 12), text_color="orange")
+lab_maneuvres.place(x=400, y=100)
 # Affichage de la liste des maneuvres
 menu1 = ctk.CTkOptionMenu(page_maneuvres, 
                          values=liste_maneuvres,
