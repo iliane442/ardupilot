@@ -2,7 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 import time
 import sys
-import threading 
+import threading
 
 from backend import pre_verification,check_mission, waypoint, main
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
@@ -194,9 +194,6 @@ def connection_vehicle():
     item.configure(text="Véhicule connecté",text_color="green")
     
 
-
-
-
 def check_mission_interface(mission):
     try :
         assert len(mission)!=0, "La mission est vide. Veuillez ajouter au moins un waypoint avant de vérifier la mission."
@@ -339,15 +336,15 @@ def ajouter_log(message):
     date = datetime.datetime.now().strftime("[%H:%M:%S]")
     full_log = f"{date} {message}\n"
     
-    log_output.configure(state="normal") # On active l'écriture
-    log_output.insert("end", full_log)   # On insère à la fin
-    log_output.see("end")                # Scroll automatique vers le bas
-    log_output.configure(state="disabled") # On verrouille
+    frame_log_log.configure(state="normal") # On active l'écriture
+    frame_log_log.insert("end", full_log)   # On insère à la fin
+    frame_log_log.see("end")                # Scroll automatique vers le bas
+    frame_log_log.configure(state="disabled") # On verrouille
 
 def effacer_logs():
-    log_output.configure(state="normal")
-    log_output.delete("1.0", "end")
-    log_output.configure(state="disabled")
+    frame_log_log.configure(state="normal")
+    frame_log_log.delete("1.0", "end")
+    frame_log_log.configure(state="disabled")
 
 
 
@@ -377,6 +374,8 @@ frame_menu_close = ctk.CTkButton(frame_menu, text="nettoyage ports", command=net
 frame_menu_close.pack(pady=10)
 frame_menu_launch = ctk.CTkButton(frame_menu, text="Lancement Mission", command=lambda: afficher_page(frame_menu, frame_launch), corner_radius=10,width=250,height=40)
 frame_menu_launch.pack(pady=10)
+frame_menu_log = ctk.CTkButton(frame_menu, text="Journal (Logs)", command=lambda: afficher_page(frame_menu, frame_logs), corner_radius=10,width=250,height=40)
+frame_menu_log.pack(pady=10)
 
 ########################################################################### Gestion de la page maneuvres ###########################################################################
 frame_maneuvre = ctk.CTkFrame(app)
@@ -493,23 +492,21 @@ frame_launch_terminal.configure(state="disabled")
 ########################################################################### Gestion de la page des logs ###########################################################################
 frame_logs = ctk.CTkFrame(app)
 
-label_logs = ctk.CTkLabel(frame_logs, text="HISTORIQUE DES MANOEUVRES", font=("Arial", 20), text_color="orange")
-label_logs.pack(pady=20)
+frame_log_name = ctk.CTkLabel(frame_logs, text="HISTORIQUE DES MANOEUVRES", font=("Arial", 20), text_color="orange")
+frame_log_name.pack(pady=20)
 
-btn_retour_logs = ctk.CTkButton(frame_logs, text="Retour", command=lambda: afficher_page(frame_logs, frame_page1), fg_color="gray")
-btn_retour_logs.pack(pady=10)
+frame_log_return = ctk.CTkButton(frame_logs, text="Retour", command=lambda: afficher_page(frame_logs, frame_menu), fg_color="gray")
+frame_log_return.pack(pady=10)
 
 # Le widget de texte pour les logs
-log_output = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
-log_output.pack(pady=20, padx=20)
-log_output.configure(state="disabled") # On le met en lecture seule
+frame_log_log = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
+frame_log_log.pack(pady=20, padx=20)
+frame_log_log.configure(state="disabled") # On le met en lecture seule
 
 # Bouton pour effacer les logs
-btn_clear_logs = ctk.CTkButton(frame_logs, text="Effacer l'historique", command=lambda: effacer_logs(), fg_color="#721c24")
-btn_clear_logs.pack(pady=5)
+frame_log_clear = ctk.CTkButton(frame_logs, text="Effacer l'historique", command=lambda: effacer_logs(), fg_color="#721c24")
+frame_log_clear.pack(pady=5)
 
-# Ajouter le bouton d'accès sur le menu principal (Page 1)
-frame1_btn_logs = ctk.CTkButton(frame_page1, text="Journal (Logs)", command=lambda: afficher_page(frame_page1, frame_logs), corner_radius=10,width=250,height=40)
-frame1_btn_logs.pack(pady=10)
+
 
 app.mainloop()

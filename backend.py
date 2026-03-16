@@ -2,7 +2,7 @@ from pymavlink import mavutil
 from time import sleep, time
 from math import radians, degrees, copysign, sin, cos, atan2, sqrt
 from transforms3d.euler import euler2quat
-from thread import threading
+import threading
 import functions as fct
 from manoeuvre import *
 
