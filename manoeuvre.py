@@ -132,7 +132,6 @@ def virage(master,angle=0,inclinaison=0):
 		stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 		erreur = stab["erreur_cum"]
 		thrust = stab["thrust"]
-		print(thrust)
 		pitch_stab = stab["pitch"]
 		dt = stab["dt"]
 		fct.send_attitude(master,inclinaison,pitch_stab,0,thrust)
