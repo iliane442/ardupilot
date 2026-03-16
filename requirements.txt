@@ -6,9 +6,7 @@ blinker==1.4
 certifi==2020.6.20
 chardet==4.0.0
 click==8.0.3
-cloud-init==25.3
 colorama==0.4.4
-command-not-found==0.3
 configobj==5.0.6
 constantly==15.1.0
 cryptography==3.4.8
@@ -16,7 +14,6 @@ customtkinter==5.2.2
 darkdetect==0.8.0
 dbus-python==1.2.18
 distro==1.7.0
-distro-info==1.1+ubuntu0.2
 dronekit==2.9.2
 dronekit-sitl==3.3.0
 empy==3.3.4
@@ -60,17 +57,14 @@ pyOpenSSL==21.0.0
 pyparsing==2.4.7
 pyrsistent==0.18.1
 pyserial==3.5
-python-apt==2.4.0+ubuntu4.1
 pytz==2022.1
-PyYAML==5.4.1
+PyYAML==6.0.1
 requests==2.25.1
 SecretStorage==3.3.1
 service-identity==18.1.0
 six==1.16.0
-systemd-python==234
 transforms3d==0.4.2
 Twisted==22.1.0
-ubuntu-pro-client==8001
 ufw==0.36.1
 unattended-upgrades==0.1
 urllib3==1.26.5

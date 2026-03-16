@@ -7,16 +7,23 @@ import socket
 #==========Armement du vehicule==========
 
 def armed(master,x):
-	# ARM
+# ARM
 	master.mav.command_long_send(
-	master.target_system,
-	master.target_component,
-	mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-	0,x,0,0,0,0,0,0)
+master.target_system,
+master.target_component,
+mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+0,
+x,0,0,0,0,0,0)
 	for _ in range(10):
-		msg = master.recv_match(type='HEARTBEAT', blocking=True)
+		msg = master.recv_match(type='HEARTBEAT', blocking=True) # remplace la fonction master.motors_armed_wait() ou disarmed pas présente dans toutes les versions
 		armed_state = (msg.base_mode & 0b10000000) > 0
-
+		if armed_state == bool(x):
+			if x==1:
+				print("Véhicule armé")
+			else:
+				print("Véhicule désarmé")
+			return True
+		time.sleep(0.5)
 
 #==========Controle du Mode==========
 
@@ -30,16 +37,26 @@ def set_mode(master, mode_name):
     master.mav.set_mode_send(
         master.target_system,
         mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-
         mode_id)
+
+#==========Lecture Mode==========
+
+def read_mode(master):
+
+	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
+	mode_id = msg.custom_mode # Récupère l'id du mode actuel 
+	modes=master.mode_mapping() # Dresse le dictionnaire des modes possibles 
+	mode_name= [name for name, id in modes.items() if id == mode_id][0]# Cherche la correspondance entre l'id reçu et le mode dans le dictionnaire des modes
+	print(f"Mode actuel, Id : {mode_name},{mode_id}") 
+	return [mode_name,mode_id]
 
 #==========Controle d'attitude==========
 
 def send_attitude(master,roll, pitch, yaw, thrust):
 
-	roll_rad  = radians(roll)
+	roll_rad = radians(roll)
 	pitch_rad = radians(pitch)
-	yaw_rad   = radians(yaw)
+	yaw_rad = radians(yaw)
 
 	q = euler2quat(roll_rad, pitch_rad, yaw_rad)
 	master.mav.set_attitude_target_send(
@@ -73,18 +90,46 @@ def get_attitude(master):
         "altitude": altitude,
         "vitesse": vit
     }
+	
+#==========Stabilité altitude==========
 
-#==========Lecture Mode==========
+def stabilite_alt(master, alt_stab=60, thrust=0.5, erreur_cum=0, dt=0.05):
+    
+	"""Retourne les valeurs de thrust et pitch pour stabiliser l'altitude.
+    	- alt_stab : altitude objectif de la stabilisation
+   	- thrust : valeur initiale ou précédente
+    	- erreur_cum : cumul d'erreur précédent
+    	- dt : intervalle depuis le dernier appel
+    	- La fonction devra être modifié au niveau des saturateurs en prennant en compte les vitesses de décrochages.
+   	- Avec les paramètres arduplanne de base ces saturateurs sont bon."""
+   
+	altitude = get_attitude(master)["altitude"]
+	stabilite = 0
 
-def read_mode(master):
+    #Erreur instantanée
+	erreur = alt_stab - altitude
 
-	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
-	mode_id = msg.custom_mode # Récupère l'id du mode actuel 
-	modes=master.mode_mapping() # Dresse le dictionnaire des modes possibles 
-	mode_name= [name for name, id in modes.items() if id == mode_id][0]# Cherche la correspondance entre l'id reçu et le mode dans le dictionnaire des modes
-	print(f"Mode actuel, Id : {mode_name},{mode_id}") 
-	return [mode_name,mode_id]
+    #Pitch proportionnel
+	pitch_stab = max(-10, min(erreur * 5, 10))  # gain proportionnel et saturation
 
+    #Thrust intégral
+	if abs(erreur) < 5:
+		erreur_cum += erreur * dt
+	thrust = 0.5+erreur_cum*0.01  # gain léger pour éviter oscillations par rapport au pitch qui a un gain élevé
+	thrust = max(0.3,min(thrust,0.8))  # saturation pour sécurité (empêcher le décrochage) 
+
+    #Stabilité
+	if abs(erreur) < 1:
+		stabilite = 1
+
+	return {
+        "thrust": thrust,
+        "pitch": pitch_stab,
+        "stabilite": stabilite,
+        "erreur_cum": erreur_cum,
+        "dt": dt
+    }
+	
 #==========Modification de paramètres==========
 
 def set_param(master,name, value):
