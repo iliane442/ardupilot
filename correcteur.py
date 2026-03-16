@@ -30,7 +30,7 @@ def alt(master, alt_target, erreur_cum=0, dt=0.05, corr_thrust=True,thrust=0.5):
 
 	return {
         "thrust": thrust,
-        "pitch": pitch_stab,
+        "pitch": pitch,
         "stabilite": stabilite,
         "erreur_cum": erreur_cum,
         "dt": dt
