@@ -8,8 +8,8 @@ from backend import pre_verification,check_mission, waypoint, main
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
 
-
-
+type_waypoint=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"]
+liste_maneuvres=["vol en palier stabilisé", "accélération/décélération", "virage à x °", "changement d'altitude","vol en turbulence naturelle","approche stabilisée","touch and go"]
 arm=False
 master = None
 mission = []
@@ -109,7 +109,7 @@ def choix_waypoint(choix,dico=dic_mission):
     waypoint_selectionne = dico[id][0]
     dico_maneuvres = dico[id][2]
     #print(waypoint_selectionne)
-    activ_wayp.configure(text=f"Waypoint sélectionné : {waypoint_selectionne}", text_color="cyan")
+    activ_wayp.configure(text=f"{waypoint_selectionne}", text_color="cyan")
     reset_scroll()
     affichage_liste(dico_maneuvres)  # Affiche les manœuvres associées au waypoint sélectionné
 
@@ -296,14 +296,14 @@ lab_wayp.place(x=600, y=20)
 menu_selection_waypoint = ctk.CTkOptionMenu(page_maneuvres, values=["Aucun"],command=choix_waypoint)
 menu_selection_waypoint.place(x=600, y=50)
 activ_wayp = ctk.CTkLabel(page_maneuvres, text="Aucun waypoint sélectionné", font=("Arial", 12), text_color="orange")
-activ_wayp.place(x=10, y=40)
+activ_wayp.place(x=15, y=50)
 # Bouton de retour à la page principale
 frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page(page_maneuvres,frame_page1), fg_color="gray")
 frame2_btn_retour.place(x=400, y=20)
 
 # Affichage de la liste des maneuvres
 menu1 = ctk.CTkOptionMenu(page_maneuvres, 
-                         values=["décollage", "Vol en palier stabilisé", "Accélération/décélération", "Virage à x °", "changement d'altitude", "atterrissage"],
+                         values=liste_maneuvres,
                          command=lambda event: ajouter_maneuvre(event, menu_selection_waypoint.get()))
 menu1.set("ajouter une maneuvre") # Texte par défaut
 menu1.place(x=400, y=50,)
@@ -334,7 +334,7 @@ label = ctk.CTkLabel(frame_page4, text=noms_parametres[4])
 label.place(x=400, y=250)
 # Menu déroulant pour la commande
 menu2 = ctk.CTkOptionMenu(frame_page4, 
-                         values=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"])
+                         values=type_waypoint)
 menu2.set("ajouter une commande") # Texte par défaut
 menu2.place(x=500, y=250)
 
