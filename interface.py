@@ -355,7 +355,7 @@ frame_menu_waypoint = ctk.CTkButton(frame_menu, text="Waypoint",command=lambda: 
 frame_menu_waypoint.pack(pady=10)
 frame_menu_maneuvre = ctk.CTkButton(frame_menu, text="Maneuvres", command=lambda: afficher_page(frame_menu,frame_maneuvre), corner_radius=10,width=250, height=40)
 frame_menu_maneuvre.pack(pady=10)
-frame_menu_close = ctk.CTkButton(frame_menu, text="fermeture", command=nettoyage, corner_radius=10,width=250, height=40)
+frame_menu_close = ctk.CTkButton(frame_menu, text="nettoyage ports", command=nettoyage, corner_radius=10,width=250, height=40)
 frame_menu_close.pack(pady=10)
 frame_menu_launch = ctk.CTkButton(frame_menu, text="Lancement Mission", command=lambda: afficher_page(frame_menu, frame_launch), corner_radius=10)
 frame_menu_launch.pack(pady=10)
