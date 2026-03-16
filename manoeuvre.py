@@ -1,7 +1,7 @@
 from pymavlink import mavutil
 import time
-import functions.py as fct
-import correcteur.py as cor
+import functions as fct
+import correcteur as cor
 from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
 
@@ -46,7 +46,7 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 	etat = fct.get_attitude(master)
 	alt_ini = etat["altitude"]
 	vit = etat["vitesse"]
-	vit_min = fct.get_vit_min(master,5)
+	vit_min = get_vit_min(master,5)
 
 	alt_cible = alt_ini+alt
 
@@ -132,7 +132,6 @@ def virage(master,angle=0,inclinaison=0):
 		stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 		erreur = stab["erreur_cum"]
 		thrust = stab["thrust"]
-		print(thrust)
 		pitch_stab = stab["pitch"]
 		dt = stab["dt"]
 		fct.send_attitude(master,inclinaison,pitch_stab,0,thrust)
