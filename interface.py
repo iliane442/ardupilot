@@ -17,6 +17,7 @@ dic_mission = {}
 scroll_width = 300
 
 
+
 def afficher_page(page,frame):
     page.pack_forget()
     frame.pack(expand=True, fill="both")
@@ -60,42 +61,41 @@ def ajouter_waypoint_dico(val,dic,num,page):
     affichage_liste(dic)
 
 def param_maneuvre(choix):
-    if choix == "take_off":
+    if choix == "take_off(x)":
         lab_maneuvres.configure(text=f"{choix}: altitude de décollage")
-        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
-        entry.place(x=400, y=150)
-        return entry
-    if choix == "vol en palier stabilisé":
+        entry_maneuvre.place(x=400, y=150)
+        return entry_maneuvre
+    elif choix == "vol en palier stabilisé":
+        entry_maneuvre.place_forget()
         return 0,0,0
-    elif choix == "accélération/décélération":
+    elif choix == "accélération/décélération(x)":
         lab_maneuvres.configure(text=f"{choix}: pourcentage de puissance (0-1)")
-        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
-        entry.place(x=400, y=150)
-        return entry
-    elif choix == "virage à x °":
+        entry_maneuvre.place(x=400, y=150)
+        return entry_maneuvre
+    elif choix == "virage à (x) °":
         lab_maneuvres.configure(text=f"{choix}: angle du virage")
-        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
-        entry.place(x=400, y=150)
-        return entry
-    elif choix == "changement d'altitude":
+        entry_maneuvre.place(x=400, y=150)
+        return entry_maneuvre
+    elif choix == "changement d'altitude(x)":
         lab_maneuvres.configure(text=f"{choix}: altitude cible")
-        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
-        entry.place(x=400, y=150)
-        return entry
+        entry_maneuvre.place(x=400, y=150)
+        return entry_maneuvre
     elif choix == "vol en turbulence naturelle":
+        entry_maneuvre.place_forget()
         return 4,0,0
     elif choix == "approche stabilisée":
+        entry_maneuvre.place_forget()
         return 5,0,0
     elif choix == "touch and go":
+        entry_maneuvre.place_forget()
         return 6,0,0
 
-def ajouter_maneuvre(choix, waypoint):
-    param_maneuvre(choix) # A modifier pour prendre en compte les paramètres de chaque manoeuvre
+def ajouter_maneuvre(choix, waypoint,val):
     num_waypoint=int(waypoint.split(":")[0].strip())
     dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
     num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint
     if "(x)" in choix:
-        choix = choix.replace("(x)",f"({param_maneuvre(choix).get()})")  # Remplace (x) par la valeur entrée dans l'entry
+        choix = choix.replace("(x)",f"({val})")  # Remplace (x) par la valeur entrée dans l'entry
         dico[num_maneuvres] = [choix]
         item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
         item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
@@ -368,13 +368,15 @@ frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda:
 frame2_btn_retour.place(x=400, y=20)
 lab_maneuvres = ctk.CTkLabel(page_maneuvres, text="choisir une maneuvre", font=("Arial", 12), text_color="orange")
 lab_maneuvres.place(x=400, y=100)
+entry_maneuvre = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
+
 # Affichage de la liste des maneuvres
 menu1 = ctk.CTkOptionMenu(page_maneuvres, 
                          values=liste_maneuvres,
-                         command=lambda : param_maneuvre())
+                         command=param_maneuvre)
 menu1.set("ajouter une maneuvre") # Texte par défaut
 menu1.place(x=400, y=50)
-valid_maneuvre = ctk.CTkButton(page_maneuvres, text="Valider la manœuvre", command=lambda event: ajouter_maneuvre(event,menu_selection_waypoint.get()), fg_color="green")
+valid_maneuvre = ctk.CTkButton(page_maneuvres, text="Valider la manœuvre", command=lambda: ajouter_maneuvre(menu1.get(),menu_selection_waypoint.get(),entry_maneuvre.get()), fg_color="green")
 valid_maneuvre.place(x=400, y=200)
 scroll_maneuvre = ctk.CTkScrollableFrame(page_maneuvres, height=400, width=scroll_width)
 scroll_maneuvre.place(x=50, y=100)
