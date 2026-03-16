@@ -332,6 +332,24 @@ def lancer_mission():
     thread.daemon = True
     thread.start()
 
+def ajouter_log(message):
+    # Ajoute un message horodaté dans l'onglet Logs.
+    import datetime
+    # Format : [HH:MM:SS] Message
+    date = datetime.datetime.now().strftime("[%H:%M:%S]")
+    full_log = f"{date} {message}\n"
+    
+    log_output.configure(state="normal") # On active l'écriture
+    log_output.insert("end", full_log)   # On insère à la fin
+    log_output.see("end")                # Scroll automatique vers le bas
+    log_output.configure(state="disabled") # On verrouille
+
+def effacer_logs():
+    log_output.configure(state="normal")
+    log_output.delete("1.0", "end")
+    log_output.configure(state="disabled")
+
+
 
 ########################################################################### Création de la fenêtre principale ###########################################################################
 ctk.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark", "Light"
@@ -471,5 +489,27 @@ frame_launch_start_mission.pack(pady=40)
 frame_launch_terminal = ctk.CTkTextbox(frame_launch, width=700, height=400, corner_radius=5)
 frame_launch_terminal.pack(pady=20)
 frame_launch_terminal.configure(state="disabled")
+
+########################################################################### Gestion de la page des logs ###########################################################################
+frame_logs = ctk.CTkFrame(app)
+
+label_logs = ctk.CTkLabel(frame_logs, text="HISTORIQUE DES MANOEUVRES", font=("Arial", 20), text_color="orange")
+label_logs.pack(pady=20)
+
+btn_retour_logs = ctk.CTkButton(frame_logs, text="Retour", command=lambda: afficher_page(frame_logs, frame_page1), fg_color="gray")
+btn_retour_logs.pack(pady=10)
+
+# Le widget de texte pour les logs
+log_output = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
+log_output.pack(pady=20, padx=20)
+log_output.configure(state="disabled") # On le met en lecture seule
+
+# Bouton pour effacer les logs
+btn_clear_logs = ctk.CTkButton(frame_logs, text="Effacer l'historique", command=lambda: effacer_logs(), fg_color="#721c24")
+btn_clear_logs.pack(pady=5)
+
+# Ajouter le bouton d'accès sur le menu principal (Page 1)
+frame1_btn_logs = ctk.CTkButton(frame_page1, text="Journal (Logs)", command=lambda: afficher_page(frame_page1, frame_logs), corner_radius=10)
+frame1_btn_logs.pack(pady=10)
 
 app.mainloop()
