@@ -9,7 +9,7 @@ from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_par
 
 
 type_waypoint=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"]
-liste_maneuvres=["vol en palier stabilisé", "accélération/décélération", "virage à x °", "changement d'altitude","vol en turbulence naturelle","approche stabilisée","touch and go"]
+liste_maneuvres=["take_off","vol en palier stabilisé", "accélération/décélération", "virage à x °", "changement d'altitude","vol en turbulence naturelle","approche stabilisée","touch and go"]
 arm=False
 master = None
 mission = []
@@ -59,8 +59,38 @@ def ajouter_waypoint_dico(val,dic,num,page):
     dic[num].insert(-1,item)
     affichage_liste(dic)
 
+def param_maneuvre(choix):
+    if choix == "take_off":
+        lab_maneuvres.configure(text=f"{choix}: altitude de décollage")
+        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
+        entry.place(x=400, y=150)
+        return entry
+    if choix == "vol en palier stabilisé":
+        return 0,0,0
+    elif choix == "accélération/décélération":
+        lab_maneuvres.configure(text=f"{choix}: pourcentage de puissance (0-1)")
+        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
+        entry.place(x=400, y=150)
+        return entry
+    elif choix == "virage à x °":
+        lab_maneuvres.configure(text=f"{choix}: angle du virage")
+        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
+        entry.place(x=400, y=150)
+        return entry
+    elif choix == "changement d'altitude":
+        lab_maneuvres.configure(text=f"{choix}: altitude cible")
+        entry = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
+        entry.place(x=400, y=150)
+        return entry
+    elif choix == "vol en turbulence naturelle":
+        return 4,0,0
+    elif choix == "approche stabilisée":
+        return 5,0,0
+    elif choix == "touch and go":
+        return 6,0,0
 
 def ajouter_maneuvre(choix, waypoint):
+    param_maneuvre(choix) # A modifier pour prendre en compte les paramètres de chaque manoeuvre
     num_waypoint=int(waypoint.split(":")[0].strip())
     dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
     num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint	
@@ -300,7 +330,7 @@ activ_wayp.place(x=15, y=50)
 # Bouton de retour à la page principale
 frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page(page_maneuvres,frame_page1), fg_color="gray")
 frame2_btn_retour.place(x=400, y=20)
-
+lab_maneuvres = ctk.CTkLabel(page_maneuvres, text="choisir une maneuvre", font=("Arial", 12), text_color="orange")
 # Affichage de la liste des maneuvres
 menu1 = ctk.CTkOptionMenu(page_maneuvres, 
                          values=liste_maneuvres,
