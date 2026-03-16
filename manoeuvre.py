@@ -46,7 +46,7 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 	etat = fct.get_attitude(master)
 	alt_ini = etat["altitude"]
 	vit = etat["vitesse"]
-	vit_min = fct.get_vit_min(master,5)
+	vit_min = get_vit_min(master,5)
 
 	alt_cible = alt_ini+alt
 
