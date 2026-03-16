@@ -73,16 +73,16 @@ def take_off(master,alt = None,thr_max = 100,pitch = None,initial_pitch = None):
 
 	for name, value in params_takeoff.items():
 		if value is not None:
-			co.set_param(master,name, value)
+			fct.set_param(master,name, value)
 
 #Décollage
 
-	co.set_mode(master,'TAKEOFF')
+	fct.set_mode(master,'TAKEOFF')
 	while vit < vit_min:
 		etat = fct.get_attitude(master)
 		vit = etat["vitesse"]
 		time.sleep(0.1)
-	co.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED')
 	time.sleep(0.5)
 	stab = fct.stabilite_alt(master,alt_cible)
 	erreur = stab["erreur_cum"]
@@ -124,7 +124,7 @@ def virage(master,angle=0,inclinaison=0):
 	dt = stab["dt"]
 
 #Virage
-	co.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED')
 	while abs((yaw_target-yaw+180)%360-180)>5:
 		etat = fct.get_attitude(master)
 		yaw = etat["yaw"]
@@ -175,7 +175,7 @@ def chgt_alt(master,hauteur = 0):
 	vit = etat["vitesse"]
 	vit_prec=vit
 
-	co.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED')
 	while abs(alt-alt_cible)>3:
 		etat = fct.get_attitude(master)
 		vit = etat["vitesse"]
