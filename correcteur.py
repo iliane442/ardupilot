@@ -1,3 +1,6 @@
+from functions import get_attitude
+
+
 def corr_alt(master, alt_target, erreur_cum=0, dt=0.05, corr_thrust=True,thrust=0.5):
 	"""Retourne les valeurs de thrust et pitch pour stabiliser l'altitude. 
 	/!\ Si l'option de correction de poussé est désactivée la correction d'erreur sera plus brutale
