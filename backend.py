@@ -497,13 +497,13 @@ def main(master, mission, dico_maneuver):
 
         while True: 
             if stop_event.is_set(): 
-                set_mode(master, 'LOITER' )
+                fct.set_mode(master, 'LOITER' )
                 print("Failsafe actif, en attente d'intervention pilote")
                 
                 start_time = time.time()
                 while not wait_for_pilot_signals(master):
                     if time.time() - start_time > 60:
-                        set_mode(master,'LAND')                 ## atterrissage d'urgence si le pilote ne prend pas la situation en main 
+                        fct.set_mode(master,'LAND')                 ## atterrissage d'urgence si le pilote ne prend pas la situation en main 
                         print('pas de pilote détécté, atterrissage forcé')
                         return
                     sleep(0.25)
