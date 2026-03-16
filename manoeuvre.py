@@ -1,6 +1,7 @@
 from pymavlink import mavutil
 import time
-import functions as fct
+import functions.py as fct
+import correcteur.py as cor
 from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
 
@@ -84,7 +85,7 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 		time.sleep(0.1)
 	fct.set_mode(master,'GUIDED')
 	time.sleep(0.5)
-	stab = fct.stabilite_alt(master,alt_cible)
+	stab = cor.alt(master,alt_cible)
 	erreur = stab["erreur_cum"]
 	stabilite = stab["stabilite"]
 	thrust = stab["thrust"]
@@ -92,7 +93,7 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 	dt = stab["dt"]
 
 	while stabilite < 20:
-		stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
+		stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 		if stab["stabilite"] == 0:
 			stabilite = 0
 		erreur = stab["erreur_cum"]
@@ -116,7 +117,7 @@ def virage(master,angle=0,inclinaison=0):
 	etat = fct.get_attitude(master)
 	yaw = etat["yaw"]
 	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
-	stab = fct.stabilite_alt(master,alt_cible)
+	stab = cor.alt(master,alt_cible)
 	erreur = stab["erreur_cum"]
 	stabilite = stab["stabilite"]
 	thrust = stab["thrust"]
@@ -128,7 +129,7 @@ def virage(master,angle=0,inclinaison=0):
 	while abs((yaw_target-yaw+180)%360-180)>5:
 		etat = fct.get_attitude(master)
 		yaw = etat["yaw"]
-		stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
+		stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 		erreur = stab["erreur_cum"]
 		thrust = stab["thrust"]
 		print(thrust)
@@ -151,19 +152,15 @@ def S_turn(master,nb_boucle=1,inclinaison=30):
 def chgt_alt(master,hauteur = 0):
 
 #Variables Globale
-
 	global alt_cible
-
 #Vérifications
-
 	if alt_cible+hauteur >= 120:
 		return print ("commande ingnoré altitude max trop élevéeé")
 	else:
 		alt_cible=alt_cible+hauteur
-
 #Variables 
 #Stabilité
-	stab = fct.stabilite_alt(master,alt_cible)
+	stab = cor.alt(master,alt_cible)
 	erreur = stab["erreur_cum"]
 	stabilite = stab["stabilite"]
 	thrust = stab["thrust"]
@@ -180,7 +177,7 @@ def chgt_alt(master,hauteur = 0):
 		etat = fct.get_attitude(master)
 		vit = etat["vitesse"]
 		alt= etat["altitude"]
-		if vit>vit_prec*0.98:
+		if vit>vit_prec*0.98: # Sécurité pour empêcher la diminution de vitesse trop rapide associée au décrochage
 			fct.send_attitude(master,
 roll = 0,
 pitch = 30*copysign(1,hauteur),
@@ -191,7 +188,7 @@ thrust = 1
 			time.sleep(dt)
 			print(vit)
 		else:
-			stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
+			stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 			erreur = stab["erreur_cum"]
 			stabilite += stab["stabilite"]
 			thrust = stab["thrust"]
@@ -205,7 +202,7 @@ thrust)
 			print("stabilisation")
 			
 	while stabilite < 20:
-		stab=fct.stabilite_alt(master,alt_cible,thrust,erreur,dt)
+		stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 		if stab["stabilite"] == 0:
 			stabilite = 0
 		erreur = stab["erreur_cum"]
