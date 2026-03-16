@@ -9,7 +9,7 @@ from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_par
 
 
 type_waypoint=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"]
-liste_maneuvres=["take_off","vol en palier stabilisé", "accélération/décélération", "virage à x °", "changement d'altitude","vol en turbulence naturelle","approche stabilisée","touch and go"]
+liste_maneuvres=["take_off(x)","vol en palier stabilisé", "accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","vol en turbulence naturelle","approche stabilisée","touch and go"]
 arm=False
 master = None
 mission = []
@@ -93,13 +93,20 @@ def ajouter_maneuvre(choix, waypoint):
     param_maneuvre(choix) # A modifier pour prendre en compte les paramètres de chaque manoeuvre
     num_waypoint=int(waypoint.split(":")[0].strip())
     dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
-    num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint	
-    dico[num_maneuvres] = [choix]
-    item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
-    item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
+    num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint
+    if "(x)" in choix:
+        choix = choix.replace("(x)",f"({param_maneuvre(choix).get()})")  # Remplace (x) par la valeur entrée dans l'entry
+        dico[num_maneuvres] = [choix]
+        item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
+        item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
+    else :	
+        dico[num_maneuvres] = [choix]
+        item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
+        item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
     dico[num_maneuvres].append(item)
     affichage_liste(dico)
-    rafraichir_menu_selection()
+
+
     
 def suppression_dico(event,dico): # Permet de supprimer un élément d'un dictionnaire et son widget associé à partir d'un clic sur le widget (arg : event du clic, dictionnaire dans lequel supprimer l'élément )
     widget = event.widget
@@ -364,9 +371,11 @@ lab_maneuvres.place(x=400, y=100)
 # Affichage de la liste des maneuvres
 menu1 = ctk.CTkOptionMenu(page_maneuvres, 
                          values=liste_maneuvres,
-                         command=lambda event: ajouter_maneuvre(event, menu_selection_waypoint.get()))
+                         command=lambda : param_maneuvre())
 menu1.set("ajouter une maneuvre") # Texte par défaut
-menu1.place(x=400, y=50,)
+menu1.place(x=400, y=50)
+valid_maneuvre = ctk.CTkButton(page_maneuvres, text="Valider la manœuvre", command=lambda event: ajouter_maneuvre(event,menu_selection_waypoint.get()), fg_color="green")
+valid_maneuvre.place(x=400, y=200)
 scroll_maneuvre = ctk.CTkScrollableFrame(page_maneuvres, height=400, width=scroll_width)
 scroll_maneuvre.place(x=50, y=100)
 
