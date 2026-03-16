@@ -1,0 +1,11 @@
+#interface.py :: code qui gère l'interface graphique composé
+
+fonctions :
+
+    afficher_page(frame à oublier, frame à afficher):
+    affichage_liste(dictionnaire):
+        #affiche les éléments d'un dictionnaire dans les scrollable frame
+    reset_scroll():
+        #enlève tous les élèments affichés dans le scrollable frame
+    create_waypoint(dictionnaire de la mission= dictionnaire crée au début du code pour stocker la fonction si aucun est donnée):
+
