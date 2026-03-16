@@ -431,9 +431,9 @@ def threading_failsafes(state_dictionary, stop_event):
 def maneuver_selection(maneuver, master):
     if maneuver == "virage à (x) °":
         virage(master,angle=0,inclinaison=0)
-    if maneuver == "changement d'altitude(x)":
+    elif maneuver == "changement d'altitude(x)":
         chgt_alt(master,hauteur = 0)
-    if maneuver == "S-turn(x)":
+    elif maneuver == "S-turn(x)":
         S_turn(master,nb_boucle=1,inclinaison=30)
     return 
 	
@@ -450,7 +450,7 @@ def thread_maneuvers(state_dictionary, clean_dico_maneuvers, stop_event, master)
 
     while not stop_event.is_set():
 
-        num_waypoint = state_dictionary["current_waypoint"]
+        num_waypoint = state_dictionary.get("current_waypoint")
 
         if num_waypoint != last_waypoint:
             if num_waypoint in clean_dico_maneuvers:
