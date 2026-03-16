@@ -1,7 +1,7 @@
 from pymavlink import mavutil
 import time
-import functions.py as fct
-import correcteur.py as cor
+import functions as fct
+import correcteur as cor
 from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
 
