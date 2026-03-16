@@ -2,7 +2,7 @@ from pymavlink import mavutil
 import subprocess
 import time
 import os
-import socket
+from math import radians
 
 #==========Armement du vehicule==========
 
