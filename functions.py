@@ -92,45 +92,6 @@ def get_attitude(master):
         "vitesse": vit
     }
 	
-#==========Stabilité altitude==========
-
-def stabilite_alt(master, alt_stab=60, thrust=0.5, erreur_cum=0, dt=0.05):
-    
-	"""Retourne les valeurs de thrust et pitch pour stabiliser l'altitude.
-    	- alt_stab : altitude objectif de la stabilisation
-   	- thrust : valeur initiale ou précédente
-    	- erreur_cum : cumul d'erreur précédent
-    	- dt : intervalle depuis le dernier appel
-    	- La fonction devra être modifié au niveau des saturateurs en prennant en compte les vitesses de décrochages.
-   	- Avec les paramètres arduplanne de base ces saturateurs sont bon."""
-   
-	altitude = get_attitude(master)["altitude"]
-	stabilite = 0
-
-    #Erreur instantanée
-	erreur = alt_stab - altitude
-
-    #Pitch proportionnel
-	pitch_stab = max(-10, min(erreur * 5, 10))  # gain proportionnel et saturation
-
-    #Thrust intégral
-	if abs(erreur) < 5:
-		erreur_cum += erreur * dt
-	thrust = 0.5+erreur_cum*0.01  # gain léger pour éviter oscillations par rapport au pitch qui a un gain élevé
-	thrust = max(0.3,min(thrust,0.8))  # saturation pour sécurité (empêcher le décrochage) 
-
-    #Stabilité
-	if abs(erreur) < 1:
-		stabilite = 1
-
-	return {
-        "thrust": thrust,
-        "pitch": pitch_stab,
-        "stabilite": stabilite,
-        "erreur_cum": erreur_cum,
-        "dt": dt
-    }
-	
 #==========Modification de paramètres==========
 
 def set_param(master,name, value):
