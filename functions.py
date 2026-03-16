@@ -2,7 +2,8 @@ from pymavlink import mavutil
 import subprocess
 import time
 import os
-from math import radians
+from math import radians, sqrt, degrees, copysign
+from transforms3d.euler import euler2quat
 
 #==========Armement du vehicule==========
 

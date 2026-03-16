@@ -1,7 +1,7 @@
 from pymavlink import mavutil
 import time
 import math
-#from transforms3d.euler import euler2quat
+from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
 import functions as fct
 
@@ -429,13 +429,13 @@ def main(master, mission):
             if bool_vehicule_operational: 
                 print('test')   ## PARTIE DU CODE POUR METTRE LES MANOEUVRES
             else: 
-                set_mode(master, 'LOITER' )
+                fct.set_mode(master, 'LOITER' )
                 print("Failsafe actif, en attente d'intervention pilote")
                 
                 start_time = time.time()
                 while not wait_for_pilot_signals(master):
                     if time.time() - start_time > 60:
-                        set_mode(master,'LAND')                 ## atterrissage d'urgence si le pilote ne prend pas la situation en main 
+                        fct.set_mode(master,'LAND')                 ## atterrissage d'urgence si le pilote ne prend pas la situation en main 
                         print('pas de pilote détecté, atterrissage forcé')
                         return
                     time.sleep(0.25)
