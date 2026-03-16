@@ -9,7 +9,7 @@ from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_par
 
 
 type_waypoint=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"]
-liste_maneuvres=["take_off(x)","vol en palier stabilisé", "accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","vol en turbulence naturelle","approche stabilisée","touch and go"]
+liste_maneuvres=["take_off(x)","vol en palier stabilisé", "accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","oscillations en tangage","oscillations en roulis","variation rapide de poussée"]
 arm=False
 master = None
 mission = []
@@ -61,50 +61,59 @@ def ajouter_waypoint_dico(val,dic,num,page):
     affichage_liste(dic)
 
 def param_maneuvre(choix):
-    if choix == "take_off(x)":
+    if choix == liste_maneuvres[0]:
         lab_maneuvres.configure(text=f"{choix}: altitude de décollage")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
-    elif choix == "vol en palier stabilisé":
+    elif choix == liste_maneuvres[1]:
         entry_maneuvre.place_forget()
         return 0,0,0
-    elif choix == "accélération/décélération(x)":
+    elif choix == liste_maneuvres[2]:
         lab_maneuvres.configure(text=f"{choix}: pourcentage de puissance (0-1)")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
-    elif choix == "virage à (x) °":
+    elif choix == liste_maneuvres[3]:
         lab_maneuvres.configure(text=f"{choix}: angle du virage")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
-    elif choix == "changement d'altitude(x)":
+    elif choix == liste_maneuvres[4]:
         lab_maneuvres.configure(text=f"{choix}: altitude cible")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
-    elif choix == "vol en turbulence naturelle":
+    elif choix == liste_maneuvres[5]:
+        lab_maneuvres.configure(text=f"{choix}")
         entry_maneuvre.place_forget()
         return 4,0,0
-    elif choix == "approche stabilisée":
+    elif choix == liste_maneuvres[6]:
+        lab_maneuvres.configure(text=f"{choix}")
         entry_maneuvre.place_forget()
         return 5,0,0
-    elif choix == "touch and go":
+    elif choix == liste_maneuvres[7]:
+        lab_maneuvres.configure(text=f"{choix}")
         entry_maneuvre.place_forget()
         return 6,0,0
 
 def ajouter_maneuvre(choix, waypoint,val):
-    num_waypoint=int(waypoint.split(":")[0].strip())
-    dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
-    num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint
-    if "(x)" in choix:
-        choix = choix.replace("(x)",f"({val})")  # Remplace (x) par la valeur entrée dans l'entry
-        dico[num_maneuvres] = [choix]
-        item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
-        item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
-    else :	
-        dico[num_maneuvres] = [choix]
-        item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
-        item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
-    dico[num_maneuvres].append(item)
-    affichage_liste(dico)
+    try :
+        assert waypoint != "Aucun", "Veuillez choisir un waypoint avant d'ajouter des maneuvres"
+        num_waypoint=int(waypoint.split(":")[0].strip())
+        dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
+        num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint
+        if "(x)" in choix:
+            choix = choix.replace("(x)",f"({val})")  # Remplace (x) par la valeur entrée dans l'entry
+            dico[num_maneuvres] = [choix]
+            item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
+            item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
+        else :	
+            dico[num_maneuvres] = [choix]
+            item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
+            item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
+        dico[num_maneuvres].append(item)
+        affichage_liste(dico)
+    except AssertionError as e:
+        item = ctk.CTkLabel(page_maneuvres, text=str(e), font=("Arial", 12), text_color="red")
+        item.pack(pady=10)
+        app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes
 
 
     
