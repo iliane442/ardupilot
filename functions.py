@@ -173,8 +173,4 @@ def lancement_sitl():
 	# Lancer SITL en arrière-plan
 	print("🚀 Lancement de SITL...")
 	sitl_proc = subprocess.Popen(["python3", "./Tools/autotest/sim_vehicle.py", "-v", "ArduPlane", "--out", "udp:127.0.0.1:14550", "--out", "udp:127.0.0.1:14551"], cwd=ardupilot_dir)
-	# Petite pause pour laisser SITL démarrer
-	#print("pause pour démarrer sitl")
-	time.sleep(10)  # 10 secondes, ajuste si nécessaire
-	print("-----------------------------------------------------lancement fini-----------------------------------------------------")
 	return True

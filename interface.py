@@ -9,7 +9,7 @@ from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_par
 
 
 type_waypoint=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"]
-liste_maneuvres=["take_off(x)","vol en palier stabilisé", "accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","oscillations en tangage","oscillations en roulis","variation rapide de poussée"]
+liste_maneuvres=["take_off(x)","vol en palier stabilisé", "accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","oscillations en tangage","oscillations en roulis","variation rapide de poussée","S-turn(x)"]
 arm=False
 master = None
 mission = []
@@ -21,7 +21,7 @@ scroll_width = 300
 def afficher_page(page,frame):
     page.pack_forget()
     frame.pack(expand=True, fill="both")
-    if frame == page_maneuvres:
+    if frame == frame_maneuvre:
         rafraichir_menu_selection()
 
 def affichage_liste(dic):
@@ -29,7 +29,7 @@ def affichage_liste(dic):
         dic[el][1].grid(row=(el), column=0, sticky='w', pady=10)
 
 def reset_scroll():
-    for widget in scroll_maneuvre.winfo_children():
+    for widget in framen_maneuvre_scroll_maneuvre.winfo_children():
         widget.grid_forget()
 
 def create_waypoint(dic=dic_mission):
@@ -48,7 +48,7 @@ def create_waypoint(dic=dic_mission):
         mission.append(waypoint(create_waypoint[0],create_waypoint[1],create_waypoint[2],create_waypoint[3],create_waypoint[4]))
         ajouter_waypoint_dico(mission[-1],dic,number_waypoints,scroll_waypoint)
     except AssertionError as e:
-        item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red")
+        item = ctk.CTkLabel(frame_waypoint, text=str(e), font=("Arial", 12), text_color="red")
         item.place(x=400, y=300)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur
 
@@ -62,36 +62,39 @@ def ajouter_waypoint_dico(val,dic,num,page):
 
 def param_maneuvre(choix):
     if choix == liste_maneuvres[0]:
-        lab_maneuvres.configure(text=f"{choix}: altitude de décollage")
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}: altitude de décollage")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
     elif choix == liste_maneuvres[1]:
         entry_maneuvre.place_forget()
         return 0,0,0
     elif choix == liste_maneuvres[2]:
-        lab_maneuvres.configure(text=f"{choix}: pourcentage de puissance (0-1)")
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}: pourcentage de puissance (0-1)")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
     elif choix == liste_maneuvres[3]:
-        lab_maneuvres.configure(text=f"{choix}: angle du virage")
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}: angle du virage")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
     elif choix == liste_maneuvres[4]:
-        lab_maneuvres.configure(text=f"{choix}: altitude cible")
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}: altitude cible")
         entry_maneuvre.place(x=400, y=150)
         return entry_maneuvre
     elif choix == liste_maneuvres[5]:
-        lab_maneuvres.configure(text=f"{choix}")
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}")
         entry_maneuvre.place_forget()
         return 4,0,0
     elif choix == liste_maneuvres[6]:
-        lab_maneuvres.configure(text=f"{choix}")
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}")
         entry_maneuvre.place_forget()
         return 5,0,0
     elif choix == liste_maneuvres[7]:
-        lab_maneuvres.configure(text=f"{choix}")
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}")
         entry_maneuvre.place_forget()
         return 6,0,0
+    elif choix == liste_maneuvres[8]:
+        frame_maneuvre_label_maneuvre.configure(text=f"{choix}: nombre de virage")
+        entry_maneuvre.place(x=400, y=150)
 
 def ajouter_maneuvre(choix, waypoint,val):
     try :
@@ -102,16 +105,16 @@ def ajouter_maneuvre(choix, waypoint,val):
         if "(x)" in choix:
             choix = choix.replace("(x)",f"({val})")  # Remplace (x) par la valeur entrée dans l'entry
             dico[num_maneuvres] = [choix]
-            item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
+            item = ctk.CTkLabel(framen_maneuvre_scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
             item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
         else :	
             dico[num_maneuvres] = [choix]
-            item = ctk.CTkLabel(scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
+            item = ctk.CTkLabel(framen_maneuvre_scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
             item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
         dico[num_maneuvres].append(item)
         affichage_liste(dico)
     except AssertionError as e:
-        item = ctk.CTkLabel(page_maneuvres, text=str(e), font=("Arial", 12), text_color="red")
+        item = ctk.CTkLabel(frame_maneuvre, text=str(e), font=("Arial", 12), text_color="red")
         item.pack(pady=10)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes
 
@@ -142,20 +145,20 @@ def rafraichir_menu_selection():
     global dic_mission
     """Met à jour le menu déroulant à partir des clés du dictionnaire."""
     if not dic_mission:
-        menu_selection_waypoint.configure(values=["Aucun"])
-        menu_selection_waypoint.set("Aucun")
+        frame_maneuvre_menu_selection_waypoint.configure(values=["Aucun"])
+        frame_maneuvre_menu_selection_waypoint.set("Aucun")
     else:
         # On crée les options à partir des données du dictionnaire
         # {k}: {v[0]} donne par exemple "1: WP"
         options = [f"{k}: {v[0]}" for k, v in dic_mission.items()]
-        menu_selection_waypoint.configure(values=options)
+        frame_maneuvre_menu_selection_waypoint.configure(values=options)
 
 def choix_waypoint(choix,dico=dic_mission):
     id = int(choix.split(":")[0].strip())
     waypoint_selectionne = dico[id][0]
     dico_maneuvres = dico[id][2]
     #print(waypoint_selectionne)
-    activ_wayp.configure(text=f"{waypoint_selectionne}", text_color="cyan")
+    frame_maneuvre_active_waypoint.configure(text=f"{waypoint_selectionne}", text_color="cyan")
     reset_scroll()
     affichage_liste(dico_maneuvres)  # Affiche les manœuvres associées au waypoint sélectionné
 
@@ -183,8 +186,14 @@ def armement():
         app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes    
 
 def connection_vehicle():
+    item = ctk.CTkLabel(frame_menu, text="Connection en cours",text_color="green")
+    item.place(x=10,y=20)
+    lancement_sitl()
     global master
     master = connection_vehicle2()
+    item.configure(text="Véhicule connecté",text_color="green")
+    
+
 
 
 
@@ -192,11 +201,11 @@ def check_mission_interface(mission):
     try :
         assert len(mission)!=0, "La mission est vide. Veuillez ajouter au moins un waypoint avant de vérifier la mission."
         msg = check_mission(mission)
-        item = ctk.CTkLabel(frame_page4, text=msg, font=("Arial", 12), text_color="green" if msg == "Mission valide" else "red")
+        item = ctk.CTkLabel(frame_waypoint, text=msg, font=("Arial", 12), text_color="green" if msg == "Mission valide" else "red")
         item.place(x=400, y=400)
         app.after(3000, item.destroy)  # Supprimer le message après 3 secondes
     except AssertionError as e:
-        item = ctk.CTkLabel(frame_page4, text=str(e), font=("Arial", 12), text_color="red",wraplength=180,justify="left") # wraplength a adapter en fonction de la taille de l'interface
+        item = ctk.CTkLabel(frame_waypoint, text=str(e), font=("Arial", 12), text_color="red",wraplength=180,justify="left") # wraplength a adapter en fonction de la taille de l'interface
         item.place(x=200, y=400)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes
 
@@ -334,96 +343,81 @@ app.title("Psyn")
 
 
 
-# Gestion de la page principale
-frame_page1 = ctk.CTkFrame(app)
-frame_page1.pack(expand=True, fill="both")
+########################################################################### Gestion de la page principale ###########################################################################
+frame_menu = ctk.CTkFrame(app)
+frame_menu.pack(expand=True, fill="both")
+frame_menu_name = ctk.CTkLabel(frame_menu, text="MENU PRINCIPAL", font=("Arial", 20))
+frame_menu_name.pack(pady=20)
 
-label1 = ctk.CTkLabel(frame_page1, text="MENU PRINCIPAL", font=("Arial", 20))
-label1.pack(pady=20)
+# Création et placement des boutons
+frame_menu_connect = ctk.CTkButton(frame_menu, text="connection du vehicule", command=connection_vehicle, corner_radius=10,width=250, height=40)
+frame_menu_connect.pack(pady=10)
+frame_menu_config = ctk.CTkButton(frame_menu, text="Config véhicule", command=lambda: afficher_page(frame_menu,frame_page3), corner_radius=10,width=250, height=40)
+frame_menu_config.pack(pady=10)
+frame_menu_waypoint = ctk.CTkButton(frame_menu, text="Waypoint",command=lambda: afficher_page(frame_menu,frame_waypoint), corner_radius=10,width=250, height=40)
+frame_menu_waypoint.pack(pady=10)
+frame_menu_maneuvre = ctk.CTkButton(frame_menu, text="Maneuvres", command=lambda: afficher_page(frame_menu,frame_maneuvre), corner_radius=10,width=250, height=40)
+frame_menu_maneuvre.pack(pady=10)
+frame_menu_close = ctk.CTkButton(frame_menu, text="fermeture", command=nettoyage, corner_radius=10,width=250, height=40)
+frame_menu_close.pack(pady=10)
 
-# Création des boutons
-frame1_fermeture = ctk.CTkButton(frame_page1, text="fermeture", command=nettoyage, corner_radius=10,width=250, height=40)
-frame1_sitl = ctk.CTkButton(frame_page1, text="lancement SITL", command=lancement_sitl, corner_radius=10,width=250, height=40)
-frame1_connection = ctk.CTkButton(frame_page1, text="connection du vehicule", command=connection_vehicle, corner_radius=10,width=250, height=40)
-frame1_config = ctk.CTkButton(frame_page1, text="Config véhicule", command=lambda: afficher_page(frame_page1,frame_page3), corner_radius=10,width=250, height=40)
-frame1_maneuvre = ctk.CTkButton(frame_page1, text="Maneuvres", command=lambda: afficher_page(frame_page1,page_maneuvres), corner_radius=10,width=250, height=40)
-frame1_waypoint = ctk.CTkButton(frame_page1, text="Waypoint",command=lambda: afficher_page(frame_page1,frame_page4), corner_radius=10,width=250, height=40)
+########################################################################### Gestion de la page maneuvres ###########################################################################
+frame_maneuvre = ctk.CTkFrame(app)
+frame_maneuvre_name = ctk.CTkLabel(frame_maneuvre, text="Maneuvres", font=("Arial", 20), text_color="orange")
+frame_maneuvre_name.place(x=200, y=20)
+frame_maneuvre_label_waypoint = ctk.CTkLabel(frame_maneuvre, text="Waypoints", font=("Arial", 20), text_color="orange")
+frame_maneuvre_label_waypoint.place(x=600, y=20)
+frame_maneuvre_menu_selection_waypoint = ctk.CTkOptionMenu(frame_maneuvre, values=["Aucun"],command=choix_waypoint)
+frame_maneuvre_menu_selection_waypoint.place(x=600, y=50)
+frame_maneuvre_active_waypoint = ctk.CTkLabel(frame_maneuvre, text="Aucun waypoint sélectionné", font=("Arial", 12), text_color="orange")
+frame_maneuvre_active_waypoint.place(x=15, y=50)
 
-
-# Placement des boutons sur la fenêtre
-frame1_sitl.pack(pady=10)
-frame1_connection.pack(pady=10)
-frame1_config.pack(pady=10)
-frame1_waypoint.pack(pady=10)
-frame1_maneuvre.pack(pady=10)
-frame1_fermeture.pack(pady=10)
-
-
-
-
-# Gestion de la page maneuvres
-page_maneuvres = ctk.CTkFrame(app)
-label2 = ctk.CTkLabel(page_maneuvres, text="Maneuvres", font=("Arial", 20), text_color="orange")
-label2.place(x=200, y=20)
-
-lab_wayp = ctk.CTkLabel(page_maneuvres, text="Waypoints", font=("Arial", 20), text_color="orange")
-lab_wayp.place(x=600, y=20)
-menu_selection_waypoint = ctk.CTkOptionMenu(page_maneuvres, values=["Aucun"],command=choix_waypoint)
-menu_selection_waypoint.place(x=600, y=50)
-activ_wayp = ctk.CTkLabel(page_maneuvres, text="Aucun waypoint sélectionné", font=("Arial", 12), text_color="orange")
-activ_wayp.place(x=15, y=50)
 # Bouton de retour à la page principale
-frame2_btn_retour = ctk.CTkButton(page_maneuvres, text="Retour", command=lambda: afficher_page(page_maneuvres,frame_page1), fg_color="gray")
-frame2_btn_retour.place(x=400, y=20)
-lab_maneuvres = ctk.CTkLabel(page_maneuvres, text="choisir une maneuvre", font=("Arial", 12), text_color="orange")
-lab_maneuvres.place(x=400, y=100)
-entry_maneuvre = ctk.CTkEntry(page_maneuvres, placeholder_text="Entrez la valeur...")
+frame_maneuvre_retour = ctk.CTkButton(frame_maneuvre, text="Retour", command=lambda: afficher_page(frame_maneuvre,frame_menu), fg_color="gray")
+frame_maneuvre_retour.place(x=400, y=20)
+frame_maneuvre_label_maneuvre = ctk.CTkLabel(frame_maneuvre, text="choisir une maneuvre", font=("Arial", 12), text_color="orange")
+frame_maneuvre_label_maneuvre.place(x=400, y=100)
+entry_maneuvre = ctk.CTkEntry(frame_maneuvre, placeholder_text="Entrez la valeur...")
 
 # Affichage de la liste des maneuvres
-menu1 = ctk.CTkOptionMenu(page_maneuvres, 
-                         values=liste_maneuvres,
-                         command=param_maneuvre)
+menu1 = ctk.CTkOptionMenu(frame_maneuvre, values=liste_maneuvres, command=param_maneuvre)
 menu1.set("ajouter une maneuvre") # Texte par défaut
 menu1.place(x=400, y=50)
-valid_maneuvre = ctk.CTkButton(page_maneuvres, text="Valider la manœuvre", command=lambda: ajouter_maneuvre(menu1.get(),menu_selection_waypoint.get(),entry_maneuvre.get()), fg_color="green")
-valid_maneuvre.place(x=400, y=200)
-scroll_maneuvre = ctk.CTkScrollableFrame(page_maneuvres, height=400, width=scroll_width)
-scroll_maneuvre.place(x=50, y=100)
+frame_maneuvre_valid_maneuvre = ctk.CTkButton(frame_maneuvre, text="Valider la manœuvre", command=lambda: ajouter_maneuvre(menu1.get(),frame_maneuvre_menu_selection_waypoint.get(),entry_maneuvre.get()), fg_color="green")
+frame_maneuvre_valid_maneuvre.place(x=400, y=200)
+framen_maneuvre_scroll_maneuvre = ctk.CTkScrollableFrame(frame_maneuvre, height=400, width=scroll_width)
+framen_maneuvre_scroll_maneuvre.place(x=50, y=100)
 
-
-
-
-
-# Gestion de la page waypoints
-frame_page4 = ctk.CTkFrame(app)
-frame4_btn_retour = ctk.CTkButton(frame_page4, text="Retour", command=lambda: afficher_page(frame_page4,frame_page1), fg_color="gray")
-frame4_btn_retour.place(x=400, y=10)
+########################################################################### Gestion de la page waypoints ###########################################################################
+frame_waypoint = ctk.CTkFrame(app)
+frame_waypoint_return = ctk.CTkButton(frame_waypoint, text="Retour", command=lambda: afficher_page(frame_waypoint,frame_menu), fg_color="gray")
+frame_waypoint_return.place(x=400, y=10)
 noms_parametres = ["Altitude (m)", "Latitude(°)", "Longitude(°)", "rayon (m)", "commande"]
 liste_entries = []
 
 # Création du tableau de création de waypoint
 for i in range(len(noms_parametres)-1):
     # Label (colonne 0)
-    label = ctk.CTkLabel(frame_page4, text=noms_parametres[i])
+    label = ctk.CTkLabel(frame_waypoint, text=noms_parametres[i])
     label.place(x=400, y=50*i+50)
     # Champ de saisie (colonne 1)
-    entry = ctk.CTkEntry(frame_page4, placeholder_text="Entrez la valeur...")
+    entry = ctk.CTkEntry(frame_waypoint, placeholder_text="Entrez la valeur...")
     entry.place(x=500, y=50*i+50)
     liste_entries.append(entry) # On garde une trace de l'entry
-label = ctk.CTkLabel(frame_page4, text=noms_parametres[4])
+label = ctk.CTkLabel(frame_waypoint, text=noms_parametres[4])
 label.place(x=400, y=250)
 # Menu déroulant pour la commande
-menu2 = ctk.CTkOptionMenu(frame_page4, 
+menu2 = ctk.CTkOptionMenu(frame_waypoint, 
                          values=type_waypoint)
 menu2.set("ajouter une commande") # Texte par défaut
 menu2.place(x=500, y=250)
 
 # Bouton de validation
-btn_valider = ctk.CTkButton(frame_page4, text="Valider le Waypoint", command=create_waypoint)
+btn_valider = ctk.CTkButton(frame_waypoint, text="Valider le Waypoint", command=create_waypoint)
 btn_valider.place(x=400, y=300)
-btn_check_mission = ctk.CTkButton(frame_page4, text="Vérifier la mission", command=lambda: check_mission_interface(mission))
+btn_check_mission = ctk.CTkButton(frame_waypoint, text="Vérifier la mission", command=lambda: check_mission_interface(mission))
 btn_check_mission.place(x=400, y=350)
-scroll_waypoint = ctk.CTkScrollableFrame(frame_page4, height=600,width=scroll_width)
+scroll_waypoint = ctk.CTkScrollableFrame(frame_waypoint, height=600,width=scroll_width)
 scroll_waypoint.place(x=10, y=10)
 
 
@@ -433,7 +427,7 @@ scroll_waypoint.place(x=10, y=10)
 frame_page3 = ctk.CTkFrame(app)
 label3 = ctk.CTkLabel(frame_page3, text="Configuration du véhicule", font=("Arial", 20), text_color="orange")
 label3.pack(pady=20)    
-frame3_btn_retour = ctk.CTkButton(frame_page3, text="Retour", command=lambda: afficher_page(frame_page3,frame_page1), fg_color="gray")
+frame3_btn_retour = ctk.CTkButton(frame_page3, text="Retour", command=lambda: afficher_page(frame_page3,frame_menu), fg_color="gray")
 frame3_btn_retour.pack(pady=10)
 switch_arm = ctk.CTkSwitch(frame_page3, text="NOT ARMED", command=armement)
 switch_arm.pack(pady=40, padx=20)
@@ -473,14 +467,14 @@ btn_save.pack(pady=10)
 frame_page5 = ctk.CTkFrame(app)
 label5 = ctk.CTkLabel(frame_page5, text="Lancement de la Mission", font=("Arial", 20), text_color="orange")
 label5.pack(pady=20)
-btn_retour5 = ctk.CTkButton(frame_page5, text="Retour", command=lambda: afficher_page(frame_page5, frame_page1), fg_color="gray")
+btn_retour5 = ctk.CTkButton(frame_page5, text="Retour", command=lambda: afficher_page(frame_page5, frame_menu), fg_color="gray")
 btn_retour5.pack(pady=10)
 
 btn_lancer_mission = ctk.CTkButton(frame_page5, text="Lancer la Mission", command=lancer_mission)
 btn_lancer_mission.pack(pady=40)
 
-frame1_btn_mission = ctk.CTkButton(frame_page1, text="Lancement Mission", 
-                                   command=lambda: afficher_page(frame_page1, frame_page5), 
+frame1_btn_mission = ctk.CTkButton(frame_menu, text="Lancement Mission", 
+                                   command=lambda: afficher_page(frame_menu, frame_page5), 
                                    corner_radius=10)
 frame1_btn_mission.pack(pady=10)
 
