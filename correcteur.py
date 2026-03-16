@@ -1,7 +1,7 @@
 from functions import get_attitude
 
 
-def corr_alt(master, alt_target, erreur_cum=0, dt=0.05, corr_thrust=True,thrust=0.5):
+def alt(master, alt_target, erreur_cum=0, dt=0.05, corr_thrust=True,thrust=0.5):
 	"""Retourne les valeurs de thrust et pitch pour stabiliser l'altitude. 
 		Si l'option de correction de poussé est désactivée la correction d'erreur sera plus brutale
     	- alt_target : altitude objectif de la stabilisation
@@ -37,7 +37,7 @@ def corr_alt(master, alt_target, erreur_cum=0, dt=0.05, corr_thrust=True,thrust=
     }
 
 
-def corr_vit(master, vit_target, erreur_cum=0, dt=0.05):
+def vit(master, vit_target, erreur_cum=0, dt=0.05):
 	'''Change la poussée pour atteindre la vitesse cible
 	-vit_target : vitesse objectif 
 	-erreur_cum : erreur intégrée sur le temps ou l'erreur à un écart de 5 m/s  
@@ -62,7 +62,7 @@ def corr_vit(master, vit_target, erreur_cum=0, dt=0.05):
         "dt": dt
     }
 
-def corr_cap(master, cap_target):
+def cap(master, cap_target):
 
 	cap = get_attitude(master)["yaw"]
 
