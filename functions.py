@@ -143,7 +143,7 @@ def set_param(master,name, value):
         mavutil.mavlink.MAV_PARAM_TYPE_REAL32
 )
 
-def nettoyage(app):
+def nettoyage():
    print("nettoyage des scripts")
    os.system('pkill -9 -f "ardu|mav|sim_vehicle"')
    return True
