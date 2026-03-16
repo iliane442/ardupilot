@@ -8,4 +8,39 @@ fonctions :
     reset_scroll():
         #enlève tous les élèments affichés dans le scrollable frame
     create_waypoint(dictionnaire de la mission= dictionnaire crée au début du code pour stocker la fonction si aucun est donnée):
+        #création du waypoint et ajout dans le dictionnaire 
+    ajouter_waypoint_dico(waypoint crée, dictionnaire de la mission, numéro du waypoint, frame pour créer le label)
+        #ajoute le waypoint dans le dictionnaire, crée le dictionnaire pour lui associer des maneuvres et crée le label
+        #{numéro du waypoint:[waypoint,label pour l'affichage,{numéro de la maneuvre:[maneuvre, label pour affichage]}]}
+    ajouter_maneuvre(maneuvre choisi, waypoint associé)
+        #ajoute la maneuvre au dictionnaire des maneuvres et crée le label
+    suppression_dico(waypoint ou maneuvre a supprimer, dictionnaire choisi pour supprimer la clé)
+        #fonction qui marche aussi bien pour les waypoint que pour les maneuvres
+        #une fois la suppression faite, réactualise la lsite affichée
+    indexage(dictionnaire à réindexer)
+        #permet de garder le bon ordonnancement des dictionnaires après la suppression
+    rafraichir_menu_selection()
+        #actualise le menu de sélection des waypoint dans la page maneuvres pour choisir parmis les waypoitns crées
+    choix_waypoint()
+        #affiche le waypoint sélectionné pour lui ajouter des maneuvres
+    armement()
+        #arme l'avion, ne fonctionne que si il est conencté
+        #change le statut de l'armement sur ardupilot après un certain temps, ne pas appuyer plusieurs fois car cela prend du temps et fais bugger, ne sait pas pourquoi
+        #si la mission est crée, fait les pré vérifications pour assurer que la mission est réalisable
+    connection_vehicle()
+        #crée le véhicule et le lie au sitl
+    check_mission_interface()
+        #fonctins juste pour l'interface qui affiche une erreur si la mission est inexistente
+    charger_pid_actuels()
 
+    sauvegarder_pid()
+
+    terminal_write()
+
+    run_with_terminal()
+
+    lancer_mission()
+
+La suite du code permet de faire tourner l'interface, l'affichage des boutons et leur associement aux fonctions
+
+#functions.py :: code qui gère les fonctions liées aux boutons autres que l'affichage
