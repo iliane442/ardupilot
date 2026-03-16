@@ -35,7 +35,7 @@ def get_vit_min(master,masse,roll_angle=0):
 
 #==========Décollage==========
 
-def take_off(master,alt = None,thr_max = 100,pitch = None,initial_pitch = None):
+def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 
 #Variable globale
 	global alt_cible
