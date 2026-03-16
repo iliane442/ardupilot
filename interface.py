@@ -375,7 +375,7 @@ frame_menu_maneuvre = ctk.CTkButton(frame_menu, text="Maneuvres", command=lambda
 frame_menu_maneuvre.pack(pady=10)
 frame_menu_close = ctk.CTkButton(frame_menu, text="nettoyage ports", command=nettoyage, corner_radius=10,width=250, height=40)
 frame_menu_close.pack(pady=10)
-frame_menu_launch = ctk.CTkButton(frame_menu, text="Lancement Mission", command=lambda: afficher_page(frame_menu, frame_launch), corner_radius=10)
+frame_menu_launch = ctk.CTkButton(frame_menu, text="Lancement Mission", command=lambda: afficher_page(frame_menu, frame_launch), corner_radius=10,width=250,height=40)
 frame_menu_launch.pack(pady=10)
 
 ########################################################################### Gestion de la page maneuvres ###########################################################################
@@ -509,7 +509,7 @@ btn_clear_logs = ctk.CTkButton(frame_logs, text="Effacer l'historique", command=
 btn_clear_logs.pack(pady=5)
 
 # Ajouter le bouton d'accès sur le menu principal (Page 1)
-frame1_btn_logs = ctk.CTkButton(frame_page1, text="Journal (Logs)", command=lambda: afficher_page(frame_page1, frame_logs), corner_radius=10)
+frame1_btn_logs = ctk.CTkButton(frame_page1, text="Journal (Logs)", command=lambda: afficher_page(frame_page1, frame_logs), corner_radius=10,width=250,height=40)
 frame1_btn_logs.pack(pady=10)
 
 app.mainloop()
