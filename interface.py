@@ -2,8 +2,10 @@ import customtkinter as ctk
 import tkinter as tk
 import time
 import sys
+import os
 import threading
-
+from datetime import datetime
+import json
 from backend import pre_verification,check_mission, waypoint, main
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
@@ -346,6 +348,24 @@ def effacer_logs():
     frame_log_log.delete("1.0", "end")
     frame_log_log.configure(state="disabled")
 
+def sauvegarder_historique(dic_mission):
+    nom_fichier = "historique.json"
+    liste_missions = []
+    for wp_id in dic_mission.keys():
+        wp = f"\\n{{{wp_id} : alt = {dic_mission[wp_id][0].alt}; lat = {dic_mission[wp_id][0].lat}; long = {dic_mission[wp_id][0].long}; radius = {dic_mission[wp_id][0].radius}; co = {dic_mission[wp_id][0].command}"
+        for m_id in dic_mission[wp_id][2]:
+            wp += f"\\n\\t{{{m_id} : {dic_mission[wp_id][2][0][0]}"
+        wp +="}}"
+        liste_missions.append(wp)
+    if os.path.exists(nom_fichier): #récupératoin des anciennes missions
+        with open(nom_fichier, "r", encoding="utf-8") as f:
+            ancient = json.load(f)
+    else:
+        ancient = []
+    ancient.append(liste_missions)
+    with open(nom_fichier, "w", encoding="utf-8") as f: #réecriture du json
+        json.dump(ancient, f, indent=4, ensure_ascii=False)
+
 
 
 ########################################################################### Création de la fenêtre principale ###########################################################################
@@ -374,7 +394,7 @@ frame_menu_close = ctk.CTkButton(frame_menu, text="nettoyage ports", command=net
 frame_menu_close.pack(pady=10)
 frame_menu_launch = ctk.CTkButton(frame_menu, text="Lancement Mission", command=lambda: afficher_page(frame_menu, frame_launch), corner_radius=10,width=250,height=40)
 frame_menu_launch.pack(pady=10)
-frame_menu_log = ctk.CTkButton(frame_menu, text="Journal (Logs)", command=lambda: afficher_page(frame_menu, frame_logs), corner_radius=10,width=250,height=40)
+frame_menu_log = ctk.CTkButton(frame_menu, text="Journal de mission", command=lambda: afficher_page(frame_menu, frame_logs), corner_radius=10,width=250,height=40)
 frame_menu_log.pack(pady=10)
 
 ########################################################################### Gestion de la page maneuvres ###########################################################################
@@ -501,12 +521,14 @@ frame_log_return.pack(pady=10)
 # Le widget de texte pour les logs
 frame_log_log = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
 frame_log_log.pack(pady=20, padx=20)
+log = json.load(open("historique.json", "r", encoding="utf-8"))
+text = json.dumps(log, indent=4, ensure_ascii=False)
+frame_log_log.insert("1.0", text) # On insère le nouveau
 frame_log_log.configure(state="disabled") # On le met en lecture seule
 
 # Bouton pour effacer les logs
-frame_log_clear = ctk.CTkButton(frame_logs, text="Effacer l'historique", command=lambda: effacer_logs(), fg_color="#721c24")
+frame_log_clear = ctk.CTkButton(frame_logs, text="save la mission", command=lambda: sauvegarder_historique(dic_mission), fg_color="#721c24")
 frame_log_clear.pack(pady=5)
-
 
 
 app.mainloop()
