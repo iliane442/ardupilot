@@ -1,6 +1,6 @@
 from pymavlink import mavutil
 import time
-import fonction as fct
+import functions as fct
 from transforms3d.euler import euler2quat
 from math import radians, sqrt, degrees, copysign
 
