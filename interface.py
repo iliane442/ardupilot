@@ -188,62 +188,91 @@ def check_mission_interface(mission):
 
 def charger_pid_actuels(axe_nom):
     global master
-    # Récupère les valeurs réelles du drone pour remplir les champs
-    prefix = "RLL" if axe_nom == "Roll" else "PTCH" if axe_nom == "Pitch" else "YAW"
-    suffixes = ["P", "I", "D"]
-    vals = {}
+    if master is None:
+        label_status.configure(text="Drone non connecté", text_color="red")
+        return
+
+    # Configuration des noms selon l'axe
+    
+    prefix = "RLL_RATE" if axe_nom == "Roll" else "PTCH_RATE" if axe_nom == "Pitch" else "YAW2SRV"
+    if prefix in ["RLL_RATE","PTCH_RATE"]:
+        
+        suffixes = ["P", "I", "D"]
+    else :
+         
+        suffixes=["RLL","INT","DAMP"]    
+                
+        
+    vals = {"P": 0.0, "I": 0.0, "D": 0.0}
 
     try:
-        label_status.configure(text="Récupération...", text_color="yellow")
-        app.update()
+        label_status.configure(text=f"Lecture {axe_nom}...", text_color="yellow")
+        app.update() # Force la mise à jour visuelle du label
 
         for s in suffixes:
-            param_id = f"{prefix}_RATE_{s}"
-            
-            # 1. On demande explicitement au drone de nous envoyer la valeur
+            param_id = f"{prefix}_{s}"
+
+            # 1. On envoie la requête de lecture
             master.mav.param_request_read_send(
-                master.target_system, 
+                master.target_system,
                 master.target_component,
-                param_id.encode('utf-8'), 
-                -1  # -1 car on cherche par nom (param_id) et non par index
-            )
-            
-            # 2. On attend le message de retour spécifique
-            
-            msg = master.recv_match(type='PARAM_VALUE', blocking=True, timeout=1.0)
-            
-            if msg and msg.param_id == param_id:
-                vals[s] = msg.param_value
-            else:
-                # Si pas de réponse, on tente la méthode cache
-                vals[s] = master.param_fetch_one(param_id)
+                param_id.encode('utf-8'),-1)
+                
+            # 2. Boucle pour filtrer les messages et trouver le bon PARAM_VALUE
+            found = False
+            timeout_timer = time.time() + 2.0  # 2 secondes max par paramètre
 
-        # 3. Mise à jour de l'interface
+            while time.time() < timeout_timer:
+                # On écoute le flux (non-bloquant avec un petit timeout interne)
+                msg = master.recv_match(type='PARAM_VALUE', blocking=True, timeout=0.1)
+
+                if msg:
+                    # Est-ce que c'est le paramètre qu'on a demandé ?
+                    if msg.param_id == param_id:
+                        vals[s] = msg.param_value
+                        found = True
+                        break # On a trouvé le P, on sort du while pour passer au I...
+
+            if not found:
+                print(f"DEBUG: Timeout sur {param_id}")
+
+            # 3. Mise à jour des Entry avec les valeurs trouvées
         entry_p.delete(0, tk.END)
-        entry_p.insert(0, str(round(vals["P"], 4)))
-        
-        entry_i.delete(0, tk.END)
-        entry_i.insert(0, str(round(vals["I"], 4)))
-        
-        entry_d.delete(0, tk.END)
-        entry_d.insert(0, str(round(vals["D"], 4)))
+        entry_p.insert(0, f"{vals['P']:.4f}")
 
-        label_status.configure(text=f"Valeurs {axe_nom} chargées !", text_color="green")
+        entry_i.delete(0, tk.END)
+        entry_i.insert(0, f"{vals['I']:.4f}")
+
+        entry_d.delete(0, tk.END)
+        entry_d.insert(0, f"{vals['D']:.4f}")
+
+        label_status.configure(text=f"Configuration {axe_nom} chargée", text_color="green")
 
     except Exception as e:
-        print(f"Erreur lecture : {e}")
+        print(f"Erreur critique : {e}")
         label_status.configure(text="Erreur de lecture SITL", text_color="red")
-
+        
+        
+        
+        
+        
 def sauvegarder_pid():
-    global master
-    #Envoie les valeurs modifiées au drone
+    global master    #Envoie les valeurs modifiées au drone
     axe = axe_var.get()
-    prefix = "RLL" if axe == "Roll" else "PTCH" if axe == "Pitch" else "YAW"
+    prefix = "RLL_RATE" if axe == "Roll" else "PTCH_RATE" if axe == "Pitch" else "YAW2SRV"
     
+   
+    if prefix in ["RLL_RATE","PTCH_RATE"]:
+       
+       suffixes = ["P", "I", "D"]
+    else :
+        
+       suffixes=["RLL","INT","DAMP"]  
+
     try:
-        set_param(master,f"{prefix}_RATE_P", float(entry_p.get()))
-        set_param(master,f"{prefix}_RATE_I", float(entry_i.get()))
-        set_param(master,f"{prefix}_RATE_D", float(entry_d.get()))
+        set_param(master,f"{prefix}_{suffixes[0]}", float(entry_p.get()))
+        set_param(master,f"{prefix}_{suffixes[1]}", float(entry_i.get()))
+        set_param(master,f"{prefix}_{suffixes[2]}", float(entry_d.get()))
         label_status.configure(text="Paramètres mis à jour !", text_color="cyan")
     except ValueError:
         label_status.configure(text="Format invalide", text_color="red")
