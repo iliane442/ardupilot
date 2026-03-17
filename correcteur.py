@@ -46,6 +46,7 @@ def alt(master, alt_target, erreur_cum=0, dt=0.05, corr_thrust=True,thrust=0.5):
 
 def vit(master, vit_target, erreur_cum=0, dt=0.05):
 	'''Change la poussée pour atteindre la vitesse cible
+	Correcteur PI pour la poussée
 	-vit_target : vitesse objectif 
 	-erreur_cum : erreur intégrée sur le temps ou l'erreur à un écart de 5 m/s 
 	-vérification de l'oscillation de la poussé dans ce cas de figure non effectué
@@ -74,6 +75,7 @@ def vit(master, vit_target, erreur_cum=0, dt=0.05):
 
 def cap(master, cap_target):
 	'''Modifie le cap de l'appareil en effectuant des virages
+	Correcteur P pour l'inclinaison(roll)
 	-cap_target : cap objectif à maintenir ou atteindre (techniquement couplé à la fonction send_attitude peut effectuer un virage)
 	'''
 
