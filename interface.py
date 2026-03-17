@@ -5,6 +5,7 @@ import sys
 import os
 import threading
 import re
+from queue import Queue 
 from datetime import datetime
 from backend import pre_verification,check_mission, waypoint, main
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
