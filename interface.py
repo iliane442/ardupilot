@@ -472,6 +472,50 @@ def affichage_mission(dico):
     frame_menu_scroll_mission.configure(state="disabled")
     frame_menu_scroll_mission.update()
 
+from pymavlink import mavutil
+
+def envoyer_mission(master, dico):
+    count = len(dico)
+    print(count)
+    #envoie du nombre de waypoint
+    master.mav.mission_count_send(
+        master.target_system, 
+        master.target_component, 
+        count
+    )
+
+    for i in range(count):
+        # Attendre que le drone demande l'item spécifique (MISSION_REQUEST)
+        msg = master.recv_match(type=['MISSION_REQUEST'], blocking=True, timeout=5)
+        if not msg:
+            print("Erreur : Le drone n'a pas demandé le point suivant.")
+            return
+
+        wp_id = msg.seq # Le numéro du point demandé par le drone
+        data = dico[wp_id][0] # Ton objet waypoint
+
+        # 2. Envoyer le point de mission
+        master.mav.mission_item_int_send(
+            master.target_system,
+            master.target_component,
+            wp_id,
+            mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, # Altitude relative au décollage
+            mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,          # Commande standard
+            0, 1, # Current (0), Autocontinue (1)
+            0, data.radius, 0, 0, # Paramètres 1 à 4 (Orbit, Radius, etc.)
+            int(data.lat * 1e7),  # Latitude * 10^7
+            int(data.long * 1e7), # Longitude * 10^7
+            data.alt              # Altitude
+        )
+        print(f"Waypoint {wp_id} envoyé.")
+
+    # 3. Attendre l'accusé de réception final
+    ack = master.recv_match(type='MISSION_ACK', blocking=True, timeout=5)
+    if ack and ack.type == mavutil.mavlink.MAV_MISSION_ACCEPTED:
+        print("Mission acceptée par Mission Planner !")
+    else:
+        print("Erreur lors de la validation de la mission.")
+
 
 ########################################################################### Création de la fenêtre ###########################################################################
 ctk.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark", "Light"
@@ -610,6 +654,8 @@ frame_launch = ctk.CTkFrame(app)
 frame_launch_name = ctk.CTkLabel(frame_launch, text="Lancement de la Mission", font=("Arial", 20), text_color="orange")
 frame_launch_name.pack(pady=20)
 frame_launch_return = ctk.CTkButton(frame_launch, text="Retour", command=lambda: afficher_page(frame_launch, frame_menu), fg_color="gray")
+frame_launch_return.pack(pady=10)
+frame_launch_return = ctk.CTkButton(frame_launch, text="envoyer un Missionplaner", command=lambda: envoyer_mission(master,dic_mission), fg_color="gray")
 frame_launch_return.pack(pady=10)
 frame_launch_start_mission = ctk.CTkButton(frame_launch, text="Lancer la Mission", command=lancer_mission)
 frame_launch_start_mission.pack(pady=40)
