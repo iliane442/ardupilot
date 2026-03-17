@@ -38,12 +38,14 @@ def create_waypoint(dic=dic_mission):
     global mission
     number_waypoints = len(dic)  # On utilise la longueur du dictionnaire pour déterminer le numéro du waypoint
     try:
-        assert all(float(entry.get()) for entry in liste_entries), "Veuillez mettre des int/float tous les champs avant de valider la mission."
-        assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
-        assert frame_waypoint_command_menu.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
+        if not 0 in liste_entries:
+            assert all(float(entry.get()) for entry in liste_entries), "Veuillez mettre des int/float tous les champs avant de valider la mission."
+            assert all(entry.get() for entry in liste_entries), "Veuillez remplir tous les champs avant de valider la mission."
+            assert frame_waypoint_command_menu.get() != "ajouter une commande", "Veuillez sélectionner une commande avant de valider la mission."
         create_waypoint = []
         for entry in liste_entries:
             create_waypoint.append(float(entry.get()))
+        for entry in liste_entries[0:-1]:
             entry.delete(0, tk.END)  # Effacer le contenu de l'entry après récupération
         create_waypoint.append(frame_waypoint_command_menu.get())
         frame_waypoint_command_menu.set("ajouter une commande") # Réinitialiser le menu déroulant
@@ -196,10 +198,10 @@ def connection_vehicle():
     item.configure(text="Véhicule connecté",text_color="green")
     
 
-def check_mission_interface(mission):
+def check_mission_interface(dico):
     try :
-        assert len(mission)!=0, "La mission est vide. Veuillez ajouter au moins un waypoint avant de vérifier la mission."
-        msg = check_mission(mission)
+        assert len(dico)!=0, "La mission est vide. Veuillez ajouter au moins un waypoint avant de vérifier la mission."
+        msg = check_mission(dico)
         item = ctk.CTkLabel(frame_waypoint, text=msg, font=("Arial", 12), text_color="green" if msg == "Mission valide" else "red")
         item.place(x=400, y=400)
         app.after(3000, item.destroy)  # Supprimer le message après 3 secondes
@@ -520,7 +522,7 @@ frame_waypoint_command_menu.place(x=500, y=250)
 # créations des boutons
 frame_waypoint_valid = ctk.CTkButton(frame_waypoint, text="Valider le Waypoint", command=create_waypoint)
 frame_waypoint_valid.place(x=400, y=300)
-frame_waypoint_check_mission = ctk.CTkButton(frame_waypoint, text="Vérifier la mission", command=lambda: check_mission_interface(mission))
+frame_waypoint_check_mission = ctk.CTkButton(frame_waypoint, text="Vérifier la mission", command=lambda: check_mission_interface(dic_mission))
 frame_waypoint_check_mission.place(x=400, y=350)
 frame_waypoint_scroll_waypoint = ctk.CTkScrollableFrame(frame_waypoint, height=600,width=scroll_width)
 frame_waypoint_scroll_waypoint.place(x=10, y=10)
@@ -603,7 +605,7 @@ frame_log_log.configure(state="disabled") # On le met en lecture seule
 # Bouton pour effacer les logs
 frame_log_clear = ctk.CTkButton(frame_logs, text="save la mission", command=lambda: sauvegarder_historique(dic_mission), fg_color="#721c24")
 frame_log_clear.pack(pady=5)
-frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(id=2), fg_color="green")
+frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(id=-1), fg_color="green")
 frame_log_load.pack(pady=5)
 
 

@@ -151,8 +151,10 @@ def check_radius(wp1,wp2):
         return True
 		
 
-def check_mission(mission):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
-    
+def check_mission(dic_mission):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
+    mission=[]
+    for id in dic_mission:
+        mission.append(dic_mission[id][0])
     if mission[-1].command != 'LAND':                 			## vérification qu'on atterrit bien 
         return 'la dernière commande doit être un atterissage'
 

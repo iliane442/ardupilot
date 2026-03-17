@@ -23,3 +23,24 @@ WP 1: alt=2.0, lat=2.0, long=2.0, radius=2.0, cmd=LAND
   > Maneuver 1: virage à (35) °
   > Maneuver 2: oscillations en tangage
   > Maneuver 3: variation rapide de poussée
+--- MISSION N°4 ---
+WP 0: alt=100.0, lat=-35.0, long=150.0, radius=2.5, cmd=TAKEOFF
+WP 1: alt=100.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
+WP 2: alt=0.1, lat=-35.0, long=150.0, radius=2.5, cmd=LAND
+------------------------------
+
+--- MISSION N°5 ---
+WP 0: alt=100.0, lat=-35.0, long=150.0, radius=2.5, cmd=TAKEOFF
+   > Maneuver 0: take_off(100)
+   > Maneuver 1: vol en palier stabilisé
+   > Maneuver 2: accélération/décélération(0.7)
+   > Maneuver 3: changement d'altitude(80)
+WP 1: alt=100.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
+   > Maneuver 0: virage à (90) °
+   > Maneuver 1: changement d'altitude(60)
+   > Maneuver 2: changement d'altitude(100)
+   > Maneuver 3: oscillations en tangage
+   > Maneuver 4: S-turn(3)
+WP 2: alt=0.1, lat=-35.0, long=150.0, radius=2.5, cmd=LAND
+------------------------------
+
