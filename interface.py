@@ -333,6 +333,7 @@ def lancer_mission():
 def sauvegarder_historique(dic_mission):
     nom_fichier = "historique.txt"
     try:
+        open(nom_fichier,"a").close()
         assert dic_mission != {}, "aucune mission à ajouter"
         
         # --- CALCUL DU NUMÉRO DE MISSION ---
@@ -591,7 +592,9 @@ frame_log_return.pack(pady=10)
 # Widget de texte pour les logs
 frame_log_log = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
 frame_log_log.pack(pady=20, padx=20)
-with open("historique.txt", "r", encoding="utf-8") as f:
+nom_f="historique.txt"
+open(nom_f,"a").close()
+with open(nom_f, "r", encoding="utf-8") as f:
     text = f.read()
 frame_log_log.delete("1.0", "end") # Optionnel : efface l'ancien contenu avant
 frame_log_log.insert("1.0", text)  # On insère le contenu du .txt
