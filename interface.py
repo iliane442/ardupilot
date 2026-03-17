@@ -229,20 +229,23 @@ def charger_pid_actuels(axe_nom):
         suffixes=["RLL","INT","DAMP"]    
                 
         
-    vals = {"P": 0.0, "I": 0.0, "D": 0.0}
+    vals = []
 
     try:
         label_status.configure(text=f"Lecture {axe_nom}...", text_color="yellow")
         app.update() # Force la mise à jour visuelle du label
-
+        
+        
         for s in suffixes:
             param_id = f"{prefix}_{s}"
 
             # 1. On envoie la requête de lecture
             master.mav.param_request_read_send(
-                master.target_system,
-                master.target_component,
-                param_id.encode('utf-8'),-1)
+    master.target_system,
+    master.target_component,
+    param_id.encode('utf-8').ljust(16, b'\0'), # Force 16 octets avec des zéros binaires
+    -1
+)
                 
             # 2. Boucle pour filtrer les messages et trouver le bon PARAM_VALUE
             found = False
@@ -254,29 +257,34 @@ def charger_pid_actuels(axe_nom):
 
                 if msg:
                     # Est-ce que c'est le paramètre qu'on a demandé ?
-                    if msg.param_id == param_id:
-                        vals[s] = msg.param_value
+                    print(f"Reçu: '{msg.param_id}' pour '{param_id}'")
+                    received_id = str(msg.param_id.strip())
+                    if received_id == param_id:
+                        vals.append(msg.param_value)
+                        print(f"Reçu: {received_id} = {msg.param_value}")
                         found = True
                         break # On a trouvé le P, on sort du while pour passer au I...
-
+        
             if not found:
                 print(f"DEBUG: Timeout sur {param_id}")
 
             # 3. Mise à jour des Entry avec les valeurs trouvées
+        
         entry_p.delete(0, tk.END)
-        entry_p.insert(0, f"{vals['P']:.4f}")
+        entry_p.insert(0, f"{vals[0]:.4f}")
 
         entry_i.delete(0, tk.END)
-        entry_i.insert(0, f"{vals['I']:.4f}")
+        entry_i.insert(0, f"{vals[1]:.4f}")
 
         entry_d.delete(0, tk.END)
-        entry_d.insert(0, f"{vals['D']:.4f}")
+        entry_d.insert(0, f"{vals[2]:.4f}")
 
         label_status.configure(text=f"Configuration {axe_nom} chargée", text_color="green")
 
     except Exception as e:
         print(f"Erreur critique : {e}")
         label_status.configure(text="Erreur de lecture SITL", text_color="red")
+        
         
         
         
