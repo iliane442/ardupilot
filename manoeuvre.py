@@ -36,35 +36,20 @@ def get_vit_min(master,masse,roll_angle=0):
 
 #==========Décollage==========
 
-def take_off(master,log,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
+def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None,initial_pitch = None):
 
 #Variable globale
 	global alt_cible
 	
+#Variables internes
 
-#Variables
-#Utilisateur
 	rep=""
-#Attitude
-	etat = fct.get_attitude(master)
-	alt_ini = etat["altitude"]
-	vit = etat["vitesse"]
+#	etat = fct.get_attitude(master)
+	alt_ini = state_dictionary["altitude"]
+	vit = state_dictionary["vitesse"]
 	vit_min = get_vit_min(master,5)
 
-#Affectation Globale
 	alt_cible = alt_ini+alt
-
-#Stabilité
-	stab = cor.alt(master,alt_cible)
-	erreur_cum = stab["erreur_cum"]
-	alt_prec = stab["alt_prec"]
-	stabilite = stab["stabilite"]
-	thrust = stab["thrust"]
-	pitch_prec = stab["pitch"]
-	dt = stab["dt"]
-	
-
-	
 
 	params_takeoff = {
     "TKOFF_ALT": alt_cible,        # altitude cible 
@@ -74,19 +59,17 @@ def take_off(master,log,alt = 50,thr_max = 100,pitch = None,initial_pitch = None
     "TKOFF_THR_MAX": thr_max,   # throttle max
 }
 
-
-
-#Mesures de sécurité
+#Mesure de sécurité
 
 	if alt >= 120:
-		return print(f"erreur {alt} ne peut pas etre supérieur à 120m")
+		return log(f"erreur {alt} ne peut pas etre supérieur à 120m")
 	if thr_max != None and thr_max < 50:
 		while rep not in ["y","Y","n","N"]:
 			rep = input("attention la poussée max est inférieure au minimum recommandé. Voulez vous continuer ? :(Y/N)")
 		if rep == "n" or rep == "N":
-			return print("procédure de décollage interrompue")
+			return log("procédure de décollage interrompue")
 		elif rep == "y" or rep == "Y":
-			print("Validation")
+			log("Validation")
 
 #Envoi des paramètres de décollage à mission planner
 
@@ -97,27 +80,33 @@ def take_off(master,log,alt = 50,thr_max = 100,pitch = None,initial_pitch = None
 #Décollage
 
 	fct.set_mode(master,'TAKEOFF')
-
-
+	log("on entre dans la boucle")
 	while vit < vit_min:
-		etat = fct.get_attitude(master)
-		vit = etat["vitesse"]
+		log(vit)	
+		vit = state_dictionary["vitesse"]
 		time.sleep(0.1)
-
+	log("on sort de la boucle")
 	fct.set_mode(master,'GUIDED')
 	time.sleep(0.5)
+	stab = cor.alt(master,alt_cible)
+	erreur = stab["erreur_cum"]
+	stabilite = stab["stabilite"]
+	thrust = stab["thrust"]
+	pitch_stab = stab["pitch"]
+	dt = stab["dt"]
 
 	while stabilite < 20:
-		stab=cor.alt(master, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt, thrust=thrust)
+		stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 		if stab["stabilite"] == 0:
 			stabilite = 0
-		erreur_cum = stab["erreur_cum"]
-		alt_prec = stab["alt_prec"]
+		erreur = stab["erreur_cum"]
 		stabilite += stab["stabilite"]
 		thrust = stab["thrust"]
-		pitch_prec = stab["pitch"]
-		fct.send_attitude(master,0,pitch_prec,0,thrust)
+		pitch_stab = stab["pitch"]
+		dt = stab["dt"]
+		fct.send_attitude(master,0,pitch_stab,0,thrust)
 		time.sleep(dt)
+	fct.set_mode(master,'AUTO')
 
 #==========Virage==========
 
