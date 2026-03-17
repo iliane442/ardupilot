@@ -7,7 +7,7 @@ import threading
 import re
 from queue import Queue 
 from datetime import datetime
-from backend import pre_verification,check_mission, waypoint, main
+from backend import pre_verification,check_mission, waypoint, main, send_mission
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
 
@@ -472,7 +472,6 @@ def affichage_mission(dico):
     frame_menu_scroll_mission.configure(state="disabled")
     frame_menu_scroll_mission.update()
 
-from pymavlink import mavutil
 
 def envoyer_mission(master, dico):
     count = len(dico)
@@ -655,7 +654,7 @@ frame_launch_name = ctk.CTkLabel(frame_launch, text="Lancement de la Mission", f
 frame_launch_name.pack(pady=20)
 frame_launch_return = ctk.CTkButton(frame_launch, text="Retour", command=lambda: afficher_page(frame_launch, frame_menu), fg_color="gray")
 frame_launch_return.pack(pady=10)
-frame_launch_return = ctk.CTkButton(frame_launch, text="envoyer un Missionplaner", command=lambda: envoyer_mission(master,dic_mission), fg_color="gray")
+frame_launch_return = ctk.CTkButton(frame_launch, text="envoyer un Missionplaner", command=lambda: send_mission(master,dic_mission), fg_color="gray")
 frame_launch_return.pack(pady=10)
 frame_launch_start_mission = ctk.CTkButton(frame_launch, text="Lancer la Mission", command=lancer_mission)
 frame_launch_start_mission.pack(pady=40)

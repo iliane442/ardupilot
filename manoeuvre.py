@@ -98,6 +98,7 @@ def take_off(master,log,alt = 50,thr_max = 100,pitch = None,initial_pitch = None
 
 	fct.set_mode(master,'TAKEOFF')
 
+
 	while vit < vit_min:
 		etat = fct.get_attitude(master)
 		vit = etat["vitesse"]

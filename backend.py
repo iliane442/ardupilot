@@ -216,7 +216,10 @@ def translate_wp_command_in_Mav_command(wp):			## Les paramètres d'envoi ne son
         return None
 
 
-def send_mission(master, mission):
+def send_mission(master, dic_mission):
+    mission=[]
+    for id in dic_mission:
+        mission.append(dic_mission[id][0])
     master.mav.mission_clear_all_send( master.target_system, master.target_component)           ## permet d'effacer une potentielle mission déjà existante
 
     master.mav.mission_count_send( master.target_system, master.target_component,               ## on prépare l'envoie d'un certains nombres de waypoints 
@@ -428,12 +431,16 @@ def threading_failsafes(state_dictionary, stop_event, log):
 #==========Thread sur les manoeuvres ==========
 
 def maneuver_selection(maneuver, master):
-    if maneuver == "virage à (x) °":
-        virage(master,angle=0,inclinaison=0)
-    elif maneuver == "changement d'altitude(x)":
-        chgt_alt(master,hauteur = 0)
-    elif maneuver == "S-turn(x)":
-        S_turn(master,nb_boucle=1,inclinaison=30)
+    if "virage" in maneuver:
+        angle = maneuver.split("(")[1].split(")")[0]
+        virage(master,angle)
+    elif "changement d'altitude" in maneuver:
+        hauteur = maneuver.split("(")[1].split(")")[0]
+        chgt_alt(master,hauteur)
+    elif "S-turn" in maneuver:
+        nb_boucle = maneuver.split("(")[1].split(")")[0]
+        S_turn(master,nb_boucle)
+    #elif maneuver == "accélération/décélération":
     return 
 	
 def create_clean_dico_maneuver(dico_maneuver):          ## {1 : [liste_manoeuvre] , 2 : [liste_manoeuvre]]}
