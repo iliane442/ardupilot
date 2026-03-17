@@ -327,7 +327,7 @@ def lancer_mission():
     frame_launch_terminal.delete("1.0", "end")                       ## pour supprimer si on lance une mission deux fois d'affilée
     frame_launch_terminal.configure(state="disabled")
 
-    thread = threading.Thread(target=run_with_terminal, args=(main, master,mission))           ## A modifier 
+    thread = threading.Thread(target=run_with_terminal, args=(main, master,mission, dic_mission))           
     thread.daemon = True
     thread.start()
 
