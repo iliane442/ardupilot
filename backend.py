@@ -423,7 +423,7 @@ def threading_failsafes(state_dictionary, stop_event, log):
             log("Failsafe critique détecté. Arrêt du programme.")
             stop_event.set()
             return
-        sleep(0.2)
+        sleep(1)
 
 #==========Thread sur les manoeuvres ==========
 
