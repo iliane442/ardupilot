@@ -1,18 +1,18 @@
---- NOUVELLE MISSION ---
+--- MISSION N°1 ---
 WP 0: alt=1.0, lat=1.0, long=1.0, radius=1.0, cmd=TAKEOFF
   > Maneuver 0: take_off(10)
   > Maneuver 1: accélération/décélération(0.9)
   > Maneuver 2: changement d'altitude(50)
   > Maneuver 3: S-turn(5)
 
---- NOUVELLE MISSION ---
-WP 0: alt=1.0, lat=1.0, long=1.0, radius=1.0, cmd=TAKEOFF
+--- MISSION N°2 ---
+WP 0: alt=4.0, lat=3.0, long=2.0, radius=1.0, cmd=TAKEOFF
   > Maneuver 0: take_off(10)
   > Maneuver 1: accélération/décélération(0.9)
   > Maneuver 2: changement d'altitude(50)
   > Maneuver 3: S-turn(5)
 
---- NOUVELLE MISSION ---
+--- MISSION N°3 ---
 WP 0: alt=1.0, lat=1.0, long=1.0, radius=1.0, cmd=TAKEOFF
   > Maneuver 0: take_off(10)
   > Maneuver 1: accélération/décélération(0.9)
@@ -23,13 +23,3 @@ WP 1: alt=2.0, lat=2.0, long=2.0, radius=2.0, cmd=LAND
   > Maneuver 1: virage à (35) °
   > Maneuver 2: oscillations en tangage
   > Maneuver 3: variation rapide de poussée
-
---- NOUVELLE MISSION ---
-WP 0: alt=2.0, lat=2.0, long=2.0, radius=2.0, cmd=RTL
-
---- NOUVELLE MISSION ---
-WP 0: alt=2.0, lat=2.0, long=2.0, radius=2.0, cmd=WAYPOINT
-
---- NOUVELLE MISSION ---
-WP 0: alt=2.0, lat=2.0, long=2.0, radius=2.0, cmd=LAND
-

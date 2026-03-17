@@ -284,8 +284,7 @@ def sauvegarder_pid():
     global master    #Envoie les valeurs modifiées au drone
     axe = axe_var.get()
     prefix = "RLL_RATE" if axe == "Roll" else "PTCH_RATE" if axe == "Pitch" else "YAW2SRV"
-    
-   
+
     if prefix in ["RLL_RATE","PTCH_RATE"]:
        
        suffixes = ["P", "I", "D"]
@@ -333,10 +332,22 @@ def lancer_mission():
 
 def sauvegarder_historique(dic_mission):
     nom_fichier = "historique.txt"
-    try :
-        assert dic_mission!={}, "aucune mission à ajouter"
-        # 1. Préparation du texte de la mission actuelle
-        nouvelle_mission = "--- NOUVELLE MISSION ---\n"
+    try:
+        assert dic_mission != {}, "aucune mission à ajouter"
+        
+        # --- CALCUL DU NUMÉRO DE MISSION ---
+        num_mission = 1
+        try:
+            with open(nom_fichier, "r", encoding="utf-8") as f:
+                contenu_existant = f.read()
+                # On compte combien de missions sont déjà présentes
+                num_mission = contenu_existant.count("--- MISSION") + 1
+        except FileNotFoundError:
+            num_mission = 1 # Le fichier n'existe pas encore, c'est la 1ère
+
+        # --- CONSTRUCTION DU TEXTE ---
+        nouvelle_mission = f"--- MISSION N°{num_mission} ---\n"
+        
         for wp_id in dic_mission.keys():
             wp_data = dic_mission[wp_id][0]
             maneuvers = dic_mission[wp_id][2]
@@ -347,25 +358,48 @@ def sauvegarder_historique(dic_mission):
             
             # Liste des manœuvres associées
             for m_id, m_details in maneuvers.items():
-                # m_details[0] contient le nom/valeur de la manœuvre
-                nouvelle_mission += f"  > Maneuver {m_id}: {m_details[0]}\n"
+                nouvelle_mission += f"   > Maneuver {m_id}: {m_details[0]}\n"
         
-        nouvelle_mission += "\n" # Espace entre les missions
+        nouvelle_mission += "-" * 30 + "\n\n" # Ligne de séparation visuelle
 
-        # 2. Sauvegarde (Mode "a" pour Append : ajoute à la fin sans effacer le reste)
+        # --- SAUVEGARDE (Mode Append) ---
         with open(nom_fichier, "a", encoding="utf-8") as f:
             f.write(nouvelle_mission)
-        with open("historique.txt", "r", encoding="utf-8") as f:
+
+        # --- MISE À JOUR DE L'INTERFACE ---
+        with open(nom_fichier, "r", encoding="utf-8") as f:
             text = f.read()
             frame_log_log.configure(state="normal")
-            frame_log_log.delete("1.0", "end") # Optionnel : efface l'ancien contenu avant
-            frame_log_log.insert("1.0", text)  # On insère le contenu du .txt
-            frame_log_log.configure(state="disabled") # On le met en lecture seule
-    except AssertionError as e:
-        error_label = ctk.CTkLabel(frame_logs, text=str(e), font=("Arial", 12), text_color="red",wraplength=180,justify="left") # wraplength a adapter en fonction de la taille de l'interface
-        error_label.place(x=330, y=700)
-        app.after(3000, error_label.destroy)  # Supprimer le message d'erreur après 3 secondes
+            frame_log_log.delete("1.0", "end")
+            frame_log_log.insert("1.0", text)
+            frame_log_log.see("end") # scrolle automatiquement vers le bas
+            frame_log_log.configure(state="disabled")
 
+    except AssertionError as e:
+        error_label = ctk.CTkLabel(frame_logs, text=str(e), font=("Arial", 12), text_color="red", wraplength=180, justify="left")
+        error_label.place(x=330, y=700)
+        app.after(3000, error_label.destroy)
+
+def obtenir_liste_missions():
+    nom_fichier = "historique.txt"
+    try:
+        with open(nom_fichier, "r", encoding="utf-8") as f:
+            contenu = f.read()
+        
+        # On découpe le texte à chaque occurrence de "--- MISSION"
+        # [1:] sert à ignorer le premier élément vide avant la première mission
+        missions = contenu.split("--- MISSION")
+        
+        # On rajoute le préfixe supprimé par le split pour garder la mise en forme
+        liste_propre = ["--- MISSION" + m for m in missions if m.strip()]
+        
+        return liste_propre
+    except FileNotFoundError:
+        return []
+
+# Exemple d'utilisation :
+toutes_les_missions = obtenir_liste_missions()
+print(f"Nombre de missions trouvées : {len(toutes_les_missions)}")
 
 
 ########################################################################### Création de la fenêtre principale ###########################################################################
@@ -518,13 +552,11 @@ frame_log_name.pack(pady=20)
 frame_log_return = ctk.CTkButton(frame_logs, text="Retour", command=lambda: afficher_page(frame_logs, frame_menu), fg_color="gray")
 frame_log_return.pack(pady=10)
 
-# Le widget de texte pour les logs
+# Widget de texte pour les logs
 frame_log_log = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
 frame_log_log.pack(pady=20, padx=20)
 with open("historique.txt", "r", encoding="utf-8") as f:
     text = f.read()
-
-# 2. Insérer le texte dans le widget (frame_log_log)
 frame_log_log.delete("1.0", "end") # Optionnel : efface l'ancien contenu avant
 frame_log_log.insert("1.0", text)  # On insère le contenu du .txt
 frame_log_log.configure(state="disabled") # On le met en lecture seule
