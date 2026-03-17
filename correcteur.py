@@ -21,22 +21,24 @@ def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, cor
 	
 #Variation max 
 	var_max = 1
-# Correcteur proportionnel dérivé
-	pitch_prop = erreur*2
-	pitch_der = derreur*0.2
-	pitch = max(pitch_prec-1,min(pitch_prop+pitch_der,pitch_prec+1))
 
-# saturation
-	pitch = max(-15, min(pitch, 15))
-
-# Activation du correcteur pour la puissance moteur + correcteur PI
+# Activation du correcteur pour la puissance moteur PI + pitch P
 	if corr_thrust:
-		
-		erreur_cum += erreur * dt
-		erreur_cum = max(-20, min(erreur_cum, 20))
-		thrust = 0.5 + erreur_cum * 0.01
+		if abs(alt-alt_target)<3:
+			erreur_cum += erreur * dt
+		thrust = 0.5 + erreur_cum * 0.05
 		thrust = max(0.3, min(thrust, 1)) #Saturation min pour éviter le décrochage et max pour rester dans les plages de valeurs admissibles
-		
+		pitch_prop = erreur*5
+		pitch = max(-15, min(pitch_prop, 15))
+
+# Activation du correcteur d'angle seul correcteur PD
+	else:
+		# Correcteur proportionnel dérivé
+		pitch_prop = erreur*3
+		pitch_der = derreur*0.2
+		pitch = max(pitch_prec-1,min(pitch_prop+pitch_der,pitch_prec+1))
+		pitch = max(-15, min(pitch, 15)) #saturation
+
 	stabilite = abs(erreur) < 1 
 
 	return {
@@ -67,11 +69,12 @@ def vit(master, vit_target, erreur_cum=0, dt=0.05):
 	erreur_cum += erreur * dt
 	erreur_cum = max(-20, min(erreur_cum, 20))
 
-	thrust_int = erreur_cum * 0.01 #correction plus fine de la poussé terme intégral 
+	thrust_int = erreur_cum * 0.05 #correction plus fine de la poussé terme intégral 
 
 	thrust = 0.5+thrust_int+thrust_prop
 	thrust = max(0.3, min(thrust, 1))
-
+	print (pitch_prec)
+	print(thrust)
 	return {
         "thrust": thrust,
         "erreur_cum": erreur_cum,
