@@ -25,6 +25,8 @@ def afficher_page(page,frame):
     frame.pack(expand=True, fill="both")
     if frame == frame_maneuvre:
         rafraichir_menu_selection()
+    if frame == frame_menu:
+        affichage_mission(dic_mission)
 
 def affichage_liste(dic):
     for el in dic.keys():
@@ -372,11 +374,11 @@ def sauvegarder_historique(dic_mission):
         # --- MISE À JOUR DE L'INTERFACE ---
         with open(nom_fichier, "r", encoding="utf-8") as f:
             text = f.read()
-            frame_log_log.configure(state="normal")
-            frame_log_log.delete("1.0", "end")
-            frame_log_log.insert("1.0", text)
-            frame_log_log.see("end") # scrolle automatiquement vers le bas
-            frame_log_log.configure(state="disabled")
+            frame_menu_scroll_mission.configure(state="normal")
+            frame_menu_scroll_mission.delete("1.0", "end")
+            frame_menu_scroll_mission.insert("1.0", text)
+            frame_menu_scroll_mission.see("end") # scrolle automatiquement vers le bas
+            frame_menu_scroll_mission.configure(state="disabled")
 
     except AssertionError as e:
         error_label = ctk.CTkLabel(frame_logs, text=str(e), font=("Arial", 12), text_color="red", wraplength=180, justify="left")
@@ -384,7 +386,8 @@ def sauvegarder_historique(dic_mission):
         app.after(3000, error_label.destroy)
 
 
-def load_mission(id):
+def load_mission(val):
+    id = int(val)-1
     nom_fichier = "historique.txt"
     try:
         with open(nom_fichier, "r", encoding="utf-8") as f:
@@ -437,9 +440,30 @@ def load_mission(id):
         return liste_propre
     except FileNotFoundError:
         return []
+    
+def affichage_mission(dico):
+    mission=""
+    for wp_id in dico.keys():
+            wp_data = dico[wp_id][0]
+            maneuvers = dico[wp_id][2]
+            
+            # Ligne principale du Waypoint
+            ligne_wp = f"WP {wp_id}: alt={wp_data.alt}, lat={wp_data.lat}, long={wp_data.long}, radius={wp_data.radius}, cmd={wp_data.command}\n"
+            mission += ligne_wp
+            
+            # Liste des manœuvres associées
+            for m_id, m_details in maneuvers.items():
+                mission += f"   > Maneuver {m_id}: {m_details[0]}\n"
+    frame_menu_scroll_mission.configure(state="normal")
+    frame_menu_scroll_mission.delete("1.0", "end")
+    frame_menu_scroll_mission.insert("1.0", mission)
+    frame_menu_scroll_mission.see("end") # scrolle automatiquement vers le bas
+    frame_menu_scroll_mission.configure(state="disabled")
+    frame_menu_scroll_mission.update()
+    print(mission)
 
 
-########################################################################### Création de la fenêtre principale ###########################################################################
+########################################################################### Création de la fenêtre ###########################################################################
 ctk.set_appearance_mode("dark")  # Modes: "System" (standard), "Dark", "Light"
 ctk.set_default_color_theme("blue")  # Thèmes: "blue" (standard), "green", "dark-blue"
 app = ctk.CTk()
@@ -451,22 +475,25 @@ frame_menu = ctk.CTkFrame(app)
 frame_menu.pack(expand=True, fill="both")
 frame_menu_name = ctk.CTkLabel(frame_menu, text="MENU PRINCIPAL", font=("Arial", 20))
 frame_menu_name.pack(pady=20)
+# Affichage de la mission complète
+frame_menu_scroll_mission = ctk.CTkTextbox(frame_menu, width=400, height=500, font=("Courier New", 12))
+frame_menu_scroll_mission.place(x=10, y=100)
 
 # Création et placement des boutons
 frame_menu_connect = ctk.CTkButton(frame_menu, text="connection du vehicule", command=connection_vehicle, corner_radius=10,width=250, height=40)
-frame_menu_connect.pack(pady=10)
+frame_menu_connect.place(x=500,y=130)
 frame_menu_config = ctk.CTkButton(frame_menu, text="Config véhicule", command=lambda: afficher_page(frame_menu,frame_configuration), corner_radius=10,width=250, height=40)
-frame_menu_config.pack(pady=10)
+frame_menu_config.place(x=500,y=180)
 frame_menu_waypoint = ctk.CTkButton(frame_menu, text="Waypoint",command=lambda: afficher_page(frame_menu,frame_waypoint), corner_radius=10,width=250, height=40)
-frame_menu_waypoint.pack(pady=10)
+frame_menu_waypoint.place(x=500,y=230)
 frame_menu_maneuvre = ctk.CTkButton(frame_menu, text="Maneuvres", command=lambda: afficher_page(frame_menu,frame_maneuvre), corner_radius=10,width=250, height=40)
-frame_menu_maneuvre.pack(pady=10)
+frame_menu_maneuvre.place(x=500,y=280)
 frame_menu_close = ctk.CTkButton(frame_menu, text="nettoyage ports", command=nettoyage, corner_radius=10,width=250, height=40)
-frame_menu_close.pack(pady=10)
+frame_menu_close.place(x=500,y=330)
 frame_menu_launch = ctk.CTkButton(frame_menu, text="Lancement Mission", command=lambda: afficher_page(frame_menu, frame_launch), corner_radius=10,width=250,height=40)
-frame_menu_launch.pack(pady=10)
+frame_menu_launch.place(x=500,y=380)
 frame_menu_log = ctk.CTkButton(frame_menu, text="Journal de mission", command=lambda: afficher_page(frame_menu, frame_logs), corner_radius=10,width=250,height=40)
-frame_menu_log.pack(pady=10)
+frame_menu_log.place(x=500,y=430)
 
 ########################################################################### Gestion de la page maneuvres ###########################################################################
 frame_maneuvre = ctk.CTkFrame(app)
@@ -592,20 +619,22 @@ frame_log_return = ctk.CTkButton(frame_logs, text="Retour", command=lambda: affi
 frame_log_return.pack(pady=10)
 
 # Widget de texte pour les logs
-frame_log_log = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
-frame_log_log.pack(pady=20, padx=20)
+frame_log_scroll_mission = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
+frame_log_scroll_mission.pack(pady=20, padx=20)
 nom_f="historique.txt"
 open(nom_f,"a").close()
 with open(nom_f, "r", encoding="utf-8") as f:
     text = f.read()
-frame_log_log.delete("1.0", "end") # Optionnel : efface l'ancien contenu avant
-frame_log_log.insert("1.0", text)  # On insère le contenu du .txt
-frame_log_log.configure(state="disabled") # On le met en lecture seule
+frame_log_scroll_mission.delete("1.0", "end") # Optionnel : efface l'ancien contenu avant
+frame_log_scroll_mission.insert("1.0", text)  # On insère le contenu du .txt
+frame_log_scroll_mission.configure(state="disabled") # On le met en lecture seule
 
 # Bouton pour effacer les logs
 frame_log_clear = ctk.CTkButton(frame_logs, text="save la mission", command=lambda: sauvegarder_historique(dic_mission), fg_color="#721c24")
 frame_log_clear.pack(pady=5)
-frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(id=-1), fg_color="green")
+frame_log_entry = ctk.CTkEntry(frame_logs)
+frame_log_entry.pack(pady=5)
+frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(frame_log_entry.get()), fg_color="green")
 frame_log_load.pack(pady=5)
 
 

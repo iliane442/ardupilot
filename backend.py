@@ -466,7 +466,7 @@ def thread_maneuvers(state_dictionary, clean_dico_maneuvers, stop_event, master)
 		
 #==========Main non complet ==========
 
-def main(master, mission, dico_maneuver):        
+def main(master, mission, dic_mission):        
 
     state_dictionary = {                                    ## attention a le mettre en global 
     "battery" : None,
@@ -480,7 +480,7 @@ def main(master, mission, dico_maneuver):
     "vitesse": None
     }
 
-    clean_dico_maneuvers = create_clean_dico_maneuver(dico_maneuver)       
+    clean_dico_maneuvers = create_clean_dico_maneuver(dic_mission)       
     take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None)
 
     stop_event = threading.Event()      

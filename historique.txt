@@ -1,35 +1,4 @@
 --- MISSION N°1 ---
-WP 0: alt=1.0, lat=1.0, long=1.0, radius=1.0, cmd=TAKEOFF
-  > Maneuver 0: take_off(10)
-  > Maneuver 1: accélération/décélération(0.9)
-  > Maneuver 2: changement d'altitude(50)
-  > Maneuver 3: S-turn(5)
-
---- MISSION N°2 ---
-WP 0: alt=4.0, lat=3.0, long=2.0, radius=1.0, cmd=TAKEOFF
-  > Maneuver 0: take_off(10)
-  > Maneuver 1: accélération/décélération(0.9)
-  > Maneuver 2: changement d'altitude(50)
-  > Maneuver 3: S-turn(5)
-
---- MISSION N°3 ---
-WP 0: alt=1.0, lat=1.0, long=1.0, radius=1.0, cmd=TAKEOFF
-  > Maneuver 0: take_off(10)
-  > Maneuver 1: accélération/décélération(0.9)
-  > Maneuver 2: changement d'altitude(50)
-  > Maneuver 3: S-turn(5)
-WP 1: alt=2.0, lat=2.0, long=2.0, radius=2.0, cmd=LAND
-  > Maneuver 0: vol en palier stabilisé
-  > Maneuver 1: virage à (35) °
-  > Maneuver 2: oscillations en tangage
-  > Maneuver 3: variation rapide de poussée
---- MISSION N°4 ---
-WP 0: alt=100.0, lat=-35.0, long=150.0, radius=2.5, cmd=TAKEOFF
-WP 1: alt=100.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
-WP 2: alt=0.1, lat=-35.0, long=150.0, radius=2.5, cmd=LAND
-------------------------------
-
---- MISSION N°5 ---
 WP 0: alt=100.0, lat=-35.0, long=150.0, radius=2.5, cmd=TAKEOFF
    > Maneuver 0: take_off(100)
    > Maneuver 1: vol en palier stabilisé
