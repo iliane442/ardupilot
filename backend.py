@@ -294,7 +294,7 @@ def wait_for_pilot_signals(master):
 
 def read_mav_mess(master, state_dictionary):        ## read mavlink messages
     while True:                                                              
-        message  =  master.rcv_match(blocking = False)                      ## on regarde en permanence les messages envoyés et on les met dans un dictionnaire d'état
+        message  =  master.recv_match(blocking = False)                      ## on regarde en permanence les messages envoyés et on les met dans un dictionnaire d'état
         if message is None:                 
             sleep(0.01) 
         else:
