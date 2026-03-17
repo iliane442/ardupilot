@@ -440,7 +440,7 @@ def create_clean_dico_maneuver(dico_maneuver):          ## {1 : [liste_manoeuvre
     clean_dict = {}
     for wp, data in dico_maneuver.items():
         maneuvers_dict = data[2]        
-        clean_dict[wp] = [m[0] for m in maneuvers_dict.values()]               ## on recupere la liste des manoeuvres 
+        clean_dict[wp] = [m[0] for m in maneuvers_dict.values()]              ## on recupere la liste des manoeuvres 
     return clean_dict
 
 
