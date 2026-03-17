@@ -4,8 +4,8 @@ import time
 import sys
 import os
 import threading
+import re
 from datetime import datetime
-import json
 from backend import pre_verification,check_mission, waypoint, main
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
@@ -54,9 +54,9 @@ def create_waypoint(dic=dic_mission):
         item.place(x=400, y=300)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur
 
-def ajouter_waypoint_dico(val,dic,num,page):
+def ajouter_waypoint_dico(wp,dic,num,page):
     dic_maneuvres={}
-    dic[num]=[val,dic_maneuvres]
+    dic[num]=[wp,dic_maneuvres]
     item = ctk.CTkLabel(page, text=f" {num}:{dic[num][0]}", font=("Arial", 12), text_color="green",cursor="hand2",wraplength=scroll_width-10,justify="left")
     item.bind("<Button-1>",lambda event: suppression_dico(event,dic))  # Lier le clic à la fonction de suppression
     dic[num].insert(-1,item)
@@ -98,14 +98,14 @@ def param_maneuvre(choix):
         frame_maneuvre_label_maneuvre.configure(text=f"{choix}: nombre de virage")
         entry_maneuvre.place(x=400, y=150)
 
-def ajouter_maneuvre(choix, waypoint,val):
+def ajouter_maneuvre(choix, waypoint,val_maneuvre):
     try :
         assert waypoint != "Aucun", "Veuillez choisir un waypoint avant d'ajouter des maneuvres"
         num_waypoint=int(waypoint.split(":")[0].strip())
         dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
         num_maneuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint
         if "(x)" in choix:
-            choix = choix.replace("(x)",f"({val})")  # Remplace (x) par la valeur entrée dans l'entry
+            choix = choix.replace("(x)",f"({val_maneuvre})")  # Remplace (x) par la valeur entrée dans l'entry
             dico[num_maneuvres] = [choix]
             item = ctk.CTkLabel(framen_maneuvre_scroll_maneuvre, text=f" {num_maneuvres}:{dico[num_maneuvres][0]}", font=("Arial", 12), text_color="green", cursor="hand2",wraplength=scroll_width-10,justify="left")
             item.bind("<Button-1>",lambda event: suppression_dico(event,dico))  # Lier le clic à la fonction de suppression
@@ -380,26 +380,60 @@ def sauvegarder_historique(dic_mission):
         error_label.place(x=330, y=700)
         app.after(3000, error_label.destroy)
 
-def obtenir_liste_missions():
+
+def load_mission(id):
     nom_fichier = "historique.txt"
     try:
         with open(nom_fichier, "r", encoding="utf-8") as f:
             contenu = f.read()
         
-        # On découpe le texte à chaque occurrence de "--- MISSION"
-        # [1:] sert à ignorer le premier élément vide avant la première mission
         missions = contenu.split("--- MISSION")
-        
-        # On rajoute le préfixe supprimé par le split pour garder la mise en forme
         liste_propre = ["--- MISSION" + m for m in missions if m.strip()]
         
+        if not liste_propre or id >= len(liste_propre):
+            return []
+
+        texte_mission = liste_propre[id]
+        
+        pattern_wp = r"WP (\d+): alt=([\d.-]+), lat=([\d.-]+), long=([\d.-]+), radius=([\d.-]+), cmd=(.+)"
+        pattern_m = r"> Maneuver (\d+): (.+)"
+        
+        # On stocke le dernier WP sous forme de string "ID: CMD" pour ta fonction
+        dernier_wp_str = "Aucun"
+
+        for ligne in texte_mission.split('\n'):
+            ligne = ligne.strip()
+
+            # 1. Gestion du Waypoint
+            match_wp = re.search(pattern_wp, ligne)
+            if match_wp:
+                wp_obj = waypoint(
+                    float(match_wp.group(2)), float(match_wp.group(3)),
+                    float(match_wp.group(4)), float(match_wp.group(5)),
+                    match_wp.group(6).strip()
+                )
+                wp_id = int(match_wp.group(1))
+                # On ajoute le WP au dico et à l'interface
+                ajouter_waypoint_dico(wp_obj, dic_mission, len(dic_mission), frame_waypoint_scroll_waypoint)
+                
+                # On prépare la string pour l'argument 'waypoint' de ajouter_maneuvre
+                # Format: "ID: NomDuWP"
+                dernier_wp_str = f"{wp_id}: {match_wp.group(6).strip()}"
+                continue
+
+            # 2. Gestion de la Manœuvre via ta fonction
+            match_m = re.search(pattern_m, ligne)
+            if match_m and dernier_wp_str != "Aucun":
+                nom_m = match_m.group(2).strip()
+                
+                # On appelle TA fonction directement !
+                # val_maneuvre n'est pas utilisé si le nom n'a pas de (x), 
+                # mais on passe le nom complet au cas où.
+                ajouter_maneuvre(nom_m, dernier_wp_str, "")
+
         return liste_propre
     except FileNotFoundError:
         return []
-
-# Exemple d'utilisation :
-toutes_les_missions = obtenir_liste_missions()
-print(f"Nombre de missions trouvées : {len(toutes_les_missions)}")
 
 
 ########################################################################### Création de la fenêtre principale ###########################################################################
@@ -566,6 +600,8 @@ frame_log_log.configure(state="disabled") # On le met en lecture seule
 # Bouton pour effacer les logs
 frame_log_clear = ctk.CTkButton(frame_logs, text="save la mission", command=lambda: sauvegarder_historique(dic_mission), fg_color="#721c24")
 frame_log_clear.pack(pady=5)
+frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(id=2), fg_color="green")
+frame_log_load.pack(pady=5)
 
 
 app.mainloop()
