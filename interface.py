@@ -348,23 +348,41 @@ def effacer_logs():
     frame_log_log.delete("1.0", "end")
     frame_log_log.configure(state="disabled")
 
+
 def sauvegarder_historique(dic_mission):
-    nom_fichier = "historique.json"
-    liste_missions = []
-    for wp_id in dic_mission.keys():
-        wp = f"\\n{{{wp_id} : alt = {dic_mission[wp_id][0].alt}; lat = {dic_mission[wp_id][0].lat}; long = {dic_mission[wp_id][0].long}; radius = {dic_mission[wp_id][0].radius}; co = {dic_mission[wp_id][0].command}"
-        for m_id in dic_mission[wp_id][2]:
-            wp += f"\\n\\t{{{m_id} : {dic_mission[wp_id][2][0][0]}"
-        wp +="}}"
-        liste_missions.append(wp)
-    if os.path.exists(nom_fichier): #récupératoin des anciennes missions
-        with open(nom_fichier, "r", encoding="utf-8") as f:
-            ancient = json.load(f)
-    else:
-        ancient = []
-    ancient.append(liste_missions)
-    with open(nom_fichier, "w", encoding="utf-8") as f: #réecriture du json
-        json.dump(ancient, f, indent=4, ensure_ascii=False)
+    nom_fichier = "historique.txt"
+    try :
+        assert dic_mission!={}, "aucune mission à ajouter"
+        # 1. Préparation du texte de la mission actuelle
+        nouvelle_mission = "--- NOUVELLE MISSION ---\n"
+        for wp_id in dic_mission.keys():
+            wp_data = dic_mission[wp_id][0]
+            maneuvers = dic_mission[wp_id][2]
+            
+            # Ligne principale du Waypoint
+            ligne_wp = f"WP {wp_id}: alt={wp_data.alt}, lat={wp_data.lat}, long={wp_data.long}, radius={wp_data.radius}, cmd={wp_data.command}\n"
+            nouvelle_mission += ligne_wp
+            
+            # Liste des manœuvres associées
+            for m_id, m_details in maneuvers.items():
+                # m_details[0] contient le nom/valeur de la manœuvre
+                nouvelle_mission += f"  > Maneuver {m_id}: {m_details[0]}\n"
+        
+        nouvelle_mission += "\n" # Espace entre les missions
+
+        # 2. Sauvegarde (Mode "a" pour Append : ajoute à la fin sans effacer le reste)
+        with open(nom_fichier, "a", encoding="utf-8") as f:
+            f.write(nouvelle_mission)
+        with open("historique.txt", "r", encoding="utf-8") as f:
+            text = f.read()
+            frame_log_log.configure(state="normal")
+            frame_log_log.delete("1.0", "end") # Optionnel : efface l'ancien contenu avant
+            frame_log_log.insert("1.0", text)  # On insère le contenu du .txt
+            frame_log_log.configure(state="disabled") # On le met en lecture seule
+    except AssertionError as e:
+        error_label = ctk.CTkLabel(frame_logs, text=str(e), font=("Arial", 12), text_color="red",wraplength=180,justify="left") # wraplength a adapter en fonction de la taille de l'interface
+        error_label.place(x=330, y=700)
+        app.after(3000, error_label.destroy)  # Supprimer le message d'erreur après 3 secondes
 
 
 
@@ -521,9 +539,12 @@ frame_log_return.pack(pady=10)
 # Le widget de texte pour les logs
 frame_log_log = ctk.CTkTextbox(frame_logs, width=700, height=500, font=("Courier New", 12))
 frame_log_log.pack(pady=20, padx=20)
-log = json.load(open("historique.json", "r", encoding="utf-8"))
-text = json.dumps(log, indent=4, ensure_ascii=False)
-frame_log_log.insert("1.0", text) # On insère le nouveau
+with open("historique.txt", "r", encoding="utf-8") as f:
+    text = f.read()
+
+# 2. Insérer le texte dans le widget (frame_log_log)
+frame_log_log.delete("1.0", "end") # Optionnel : efface l'ancien contenu avant
+frame_log_log.insert("1.0", text)  # On insère le contenu du .txt
 frame_log_log.configure(state="disabled") # On le met en lecture seule
 
 # Bouton pour effacer les logs
