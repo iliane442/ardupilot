@@ -468,7 +468,6 @@ def affichage_mission(dico):
     frame_menu_scroll_mission.see("end") # scrolle automatiquement vers le bas
     frame_menu_scroll_mission.configure(state="disabled")
     frame_menu_scroll_mission.update()
-    print(mission)
 
 
 ########################################################################### Création de la fenêtre ###########################################################################
