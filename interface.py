@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import tkinter as tk
-import time
+from time import sleep, time
 import sys
 import os
 import threading
@@ -318,19 +318,20 @@ def terminal_write(message):
     frame_launch_terminal.see("end")
     frame_launch_terminal.configure(state="disabled")
 
-def run_with_terminal(func, *args, **kwargs):
-    old_stdout = sys.stdout  # sauvegarde l'ancien stdout
-    class StdoutRedirector:
-        def write(self, message):
-            # envoie chaque message dans le widget terminal
-            app.after(0, terminal_write, message)
-        def flush(self):
-            pass  # nécessaire pour que certains prints fonctionnent
-    sys.stdout = StdoutRedirector()  # redirige stdout vers notre widget
-    try:
-        func(*args, **kwargs)  # exécute la fonction ciblée
-    finally:
-        sys.stdout = old_stdout  # restaure stdout à la fin
+
+log_queue = Queue()
+
+def process_log_queue():
+    while not log_queue.empty():
+        msg = log_queue.get()
+        terminal_write(msg + "\n")
+
+    app.after(50, process_log_queue)                ## pour relancer la fonction 50 ms plus tard 
+
+
+def log(message):
+    log_queue.put(str(message))                  ## file d'attente thread safe, pour remplacer print
+
 
 def lancer_mission():
 
@@ -338,9 +339,9 @@ def lancer_mission():
     frame_launch_terminal.delete("1.0", "end")                       ## pour supprimer si on lance une mission deux fois d'affilée
     frame_launch_terminal.configure(state="disabled")
 
-    thread = threading.Thread(target=run_with_terminal, args=(main, master,mission, dic_mission))           
-    thread.daemon = True
+    thread = threading.Thread(target=main, args=(master,mission, dic_mission, log), daemon = True)           
     thread.start()
+
 
 def sauvegarder_historique(dic_mission):
     nom_fichier = "historique.txt"
@@ -645,5 +646,5 @@ frame_log_entry.pack(pady=5)
 frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(frame_log_entry.get()), fg_color="green")
 frame_log_load.pack(pady=5)
 
-
+app.after(100, process_log_queue)
 app.mainloop()
