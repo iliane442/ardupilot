@@ -36,7 +36,7 @@ def get_vit_min(master,masse,roll_angle=0):
 
 #==========Décollage==========
 
-def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
+def take_off(master, log, alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 
 #Variable globale
 	global alt_cible
@@ -79,12 +79,12 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 #Mesures de sécurité
 
 	if alt >= 120:
-		return print(f"erreur {alt} ne peut pas etre supérieur à 120m")
+		return log(f"erreur {alt} ne peut pas etre supérieur à 120m")
 	if thr_max != None and thr_max < 50:
 		while rep not in ["y","Y","n","N"]:
 			rep = input("attention la poussée max est inférieure au minimum recommandé. Voulez vous continuer ? :(Y/N)")
 		if rep == "n" or rep == "N":
-			return print("procédure de décollage interrompue")
+			return log("procédure de décollage interrompue")
 		elif rep == "y" or rep == "Y":
 			print("Validation")
 
