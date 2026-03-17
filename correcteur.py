@@ -22,7 +22,7 @@ def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, cor
 #Variation max 
 	var_max = 1
 # Correcteur proportionnel dérivé
-	pitch_prop = erreur*1
+	pitch_prop = erreur*2
 	pitch_der = derreur*0.2
 	pitch = max(pitch_prec-1,min(pitch_prop+pitch_der,pitch_prec+1))
 
@@ -31,9 +31,9 @@ def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, cor
 
 # Activation du correcteur pour la puissance moteur + correcteur PI
 	if corr_thrust:
-		if abs(erreur) < 3:
-			erreur_cum += erreur * dt
-
+		
+		erreur_cum += erreur * dt
+		erreur_cum = max(-20, min(erreur_cum, 20))
 		thrust = 0.5 + erreur_cum * 0.01
 		thrust = max(0.3, min(thrust, 1)) #Saturation min pour éviter le décrochage et max pour rester dans les plages de valeurs admissibles
 		
@@ -63,11 +63,11 @@ def vit(master, vit_target, erreur_cum=0, dt=0.05):
 	
 	thrust_prop= erreur*0.05 # correction rapide de la poussé terme proportionnel
 
-	if abs(erreur) < 5:
-		erreur_cum += erreur * dt
-		erreur_cum = max(-50, min(erreur_cum, 50))
 
-	thrust_int = erreur_cum * 0.05 #correction plus fine de la poussé terme intégral 
+	erreur_cum += erreur * dt
+	erreur_cum = max(-20, min(erreur_cum, 20))
+
+	thrust_int = erreur_cum * 0.01 #correction plus fine de la poussé terme intégral 
 
 	thrust = 0.5+thrust_int+thrust_prop
 	thrust = max(0.3, min(thrust, 1))
