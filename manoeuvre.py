@@ -36,7 +36,7 @@ def get_vit_min(master,masse,roll_angle=0):
 
 #==========Décollage==========
 
-def take_off(master, log, alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
+def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 
 #Variable globale
 	global alt_cible
@@ -79,12 +79,12 @@ def take_off(master, log, alt = 50,thr_max = 100,pitch = None,initial_pitch = No
 #Mesures de sécurité
 
 	if alt >= 120:
-		return log(f"erreur {alt} ne peut pas etre supérieur à 120m")
+		return print(f"erreur {alt} ne peut pas etre supérieur à 120m")
 	if thr_max != None and thr_max < 50:
 		while rep not in ["y","Y","n","N"]:
 			rep = input("attention la poussée max est inférieure au minimum recommandé. Voulez vous continuer ? :(Y/N)")
 		if rep == "n" or rep == "N":
-			return log("procédure de décollage interrompue")
+			return print("procédure de décollage interrompue")
 		elif rep == "y" or rep == "Y":
 			print("Validation")
 
@@ -205,14 +205,16 @@ def chgt_alt(master,hauteur = 0):
 	fct.set_mode(master,'GUIDED')
 
 # Changement d'altitude
-	while abs(alt-alt_cible)>3:
+	while abs(alt_cible-alt)>5:
 
 		etat = fct.get_attitude(master)
 		vit = etat["vitesse"]
-		alt= etat["altitude"]
+		alt = etat["altitude"]
+		vit_min = get_vit_min(master,5)
+		print(alt)
 
-		if vit > vit_prec*0.98: # Sécurité pour empêcher la diminution de vitesse trop rapide associée au décrochage
-			fct.send_attitude(master,roll = 0,pitch_prec = 20*copysign(1,hauteur),yaw = 0,thrust = 1)
+		if vit > vit_min+1: # Sécurité pour empêcher la diminution de vitesse trop rapide associée au décrochage
+			fct.send_attitude(master,roll = 0,pitch = 20*copysign(1,hauteur),yaw = 0,thrust = 1)
 
 			vit_prec=vit
 			time.sleep(dt)
@@ -230,14 +232,15 @@ def chgt_alt(master,hauteur = 0):
 			fct.send_attitude(master,0,pitch_prec,0,thrust)
 			time.sleep(dt)
 			print("stabilisation")
-#Stabilisation en fin de montée 		
+
+#Stabilisation en fin de montée		
 	while stabilite < 20:
 		stab=cor.alt(master, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt, thrust=thrust)
 		if stab["stabilite"] == 0:
 			stabilite = 0
 		erreur_cum = stab["erreur_cum"]
 		alt_prec = stab["alt_prec"]
-		pith_prec= stab ["pitch"]
+		pitch_prec= stab ["pitch"]
 		stabilite += stab["stabilite"]
 		thrust = stab["thrust"]
 		fct.send_attitude(master,0,pitch_prec,0,thrust)
@@ -271,7 +274,7 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 	alt_stab = cor.alt(master, alt_target=alt_cible, corr_thrust=False)
 	erreur_cum = alt_stab["erreur_cum"]
 	alt_prec = alt_stab["alt_prec"]
-	pitch__prec= alt_stab["pitch"]
+	pitch_prec= alt_stab["pitch"]
 	dt=alt_stab["dt"]
 
 #Initialisation de l'avion en mode poussée minimale pendant 3 secondes
