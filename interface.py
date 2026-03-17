@@ -174,7 +174,7 @@ def choix_waypoint(choix,dico=dic_mission):
 
 def armement():
     global arm,master
-    pre_verification(master)
+    pre_verification(master, log)
     try:
         assert master is not None, "Veuillez connecter le véhicule avant de tenter d'armer."
         if frame_configuration_armed.get() == 1:
