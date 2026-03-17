@@ -331,24 +331,6 @@ def lancer_mission():
     thread.daemon = True
     thread.start()
 
-def ajouter_log(message):
-    # Ajoute un message horodaté dans l'onglet Logs.
-    import datetime
-    # Format : [HH:MM:SS] Message
-    date = datetime.datetime.now().strftime("[%H:%M:%S]")
-    full_log = f"{date} {message}\n"
-    
-    frame_log_log.configure(state="normal") # On active l'écriture
-    frame_log_log.insert("end", full_log)   # On insère à la fin
-    frame_log_log.see("end")                # Scroll automatique vers le bas
-    frame_log_log.configure(state="disabled") # On verrouille
-
-def effacer_logs():
-    frame_log_log.configure(state="normal")
-    frame_log_log.delete("1.0", "end")
-    frame_log_log.configure(state="disabled")
-
-
 def sauvegarder_historique(dic_mission):
     nom_fichier = "historique.txt"
     try :
