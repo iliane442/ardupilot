@@ -21,7 +21,7 @@ class waypoint:
 
 ## Pré-verification des composants   
 
-def battery_pre_verification(master, blocking):
+def battery_pre_verification(master, log, blocking):
     message = master.recv_match(type='SYS_STATUS', blocking=blocking, timeout=2 if blocking else 0 )
     if message is None:
         return False
@@ -30,28 +30,29 @@ def battery_pre_verification(master, blocking):
     battery_remaining = message.battery_remaining
 
     if voltage < 10.5:
-        print("Voltage batterie trop faible")
+        log("Voltage batterie trop faible")
         return False
 
     if battery_remaining is not None and battery_remaining < 20:
-        print("Batterie trop faible")
-        return False
-
-    return True 
-
-def GPS_pre_verification(master):
-    message = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout = 2)
-    if message is None:
-        print('Impossible de connaitre les coordonnées GPS')
-        return False
-    elif message.fix_type >= 3:
-        print("GPS OK")
-        return True
-    else:   
-        print("GPS non prêt")
+        log("Batterie trop faible")
         return False
     
-def sensors_pre_verification(master, blocking):
+    log("Batterie OK")
+    return True 
+
+def GPS_pre_verification(master, log):
+    message = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout = 2)
+    if message is None:
+        log('Impossible de connaitre les coordonnées GPS')
+        return False
+    elif message.fix_type >= 3:
+        log("GPS OK")
+        return True
+    else:   
+        log("GPS non prêt")
+        return False
+    
+def sensors_pre_verification(master, log, blocking):
     ekf_critical_flags= {
         0: "EKF_ATTITUDE (Tilt roll/pitch)",
         1: "EKF_VEL_VERT (Vitesse verticale)",
@@ -59,7 +60,7 @@ def sensors_pre_verification(master, blocking):
         3: "EKF_POS_VERT (Position verticale)",
         4: "EKF_POS_HORIZ (Position horizontale)",
         5: "EKF_MAG_HDG (Compas magnétique)",
- #      6: "EKF_GPS (GPS utilisé par EKF)"
+ #      6: "EKF_GPS (GPS utilisé par EKF)"				incompatible avec le sitl
     }
 
     ekf_verification = True
@@ -73,25 +74,25 @@ def sensors_pre_verification(master, blocking):
 
     for bit, name in ekf_critical_flags.items():
         if not (flags & (1 << bit)):
-           print(f"EKF flag critique non OK: bit {name}")
+           log(f"EKF flag critique non OK: bit {name}")
            ekf_verification = False
     if ekf_verification:
-        print("EKF stable et tous les capteurs critiques OK")
+        log("EKF stable et tous les capteurs critiques OK")
         return True 
     else:
         return False
 
-def pre_verification(master):
+def pre_verification(master, log):
     
-    if not battery_pre_verification(master, blocking = True):
-        print('Impossible de lire la batterie')
+    if not battery_pre_verification(master, log, blocking = True):
+        log('Impossible de lire la batterie')
         return False 
 
-    if not GPS_pre_verification(master):
+    if not GPS_pre_verification(master, log):
         return False
     
-    if not sensors_pre_verification(master, blocking = True):
-        print(' Les capteurs sont indisponibles')
+    if not sensors_pre_verification(master, log, blocking = True):
+        log(' Les capteurs sont indisponibles')
         return False 
 
     return True 	
@@ -470,8 +471,8 @@ def thread_maneuvers(state_dictionary, clean_dico_maneuvers, stop_event, master)
 		
 #==========Main non complet ==========
 
-def main(master, mission, dico_maneuver, log):        
-
+def main(master, mission, dico_maneuver, log):   
+	
     log("Démarrage du script de mission...")
 
     state_dictionary = {                                    ## attention a le mettre en global 
@@ -486,14 +487,25 @@ def main(master, mission, dico_maneuver, log):
     "vitesse": None
     }
 
-    clean_dico_maneuvers = create_clean_dico_maneuver(dico_maneuver)      
-
-    take_off(master, log, alt = 50,thr_max = 100, pitch = None,initial_pitch = None)
-
+    if pre_verification(master,log) == False:
+        log("Un des systèmes critiques de l'avion empêche le décollage")
+        return 
+    
     stop_event = threading.Event()     
 
-    log("takeoff bien effectue")
+    clean_dico_maneuvers = create_clean_dico_maneuver(dico_maneuver)      
 
+    log("Démarrage du thread mavlink...")
+    thread_mavlink = threading.Thread(target=read_mav_mess, args=(master, state_dictionary), daemon=True)
+    thread_mavlink.start()
+    sleep(3)
+
+    log("debut du décollage")
+
+    take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None,initial_pitch = None)
+
+    log("takeoff bien effectue")
+	
     try:     
         thread_mavlink = threading.Thread(target=read_mav_mess, args=(master, state_dictionary), daemon=True)
         thread_mavlink.start()
