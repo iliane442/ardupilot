@@ -316,7 +316,7 @@ def read_mav_mess(master, state_dictionary):        ## read mavlink messages
 
 #==========Thread sur les failsafes ==========
 
-def battery_verification(state_dictionary):
+def battery_verification(state_dictionary, log):
     message = state_dictionary["battery"]
     if message is None:
         return False
@@ -325,16 +325,16 @@ def battery_verification(state_dictionary):
     battery_remaining = message.battery_remaining
 
     if voltage < 10.5:
-        print("Voltage batterie trop faible")
+        log("Voltage batterie trop faible")
         return False
 
     if battery_remaining is not None and battery_remaining < 20:
-        print("Batterie trop faible")
+        log("Batterie trop faible")
         return False
 
-    return True 
+    return True
 
-def sensors_verification(state_dictionary):
+def sensors_verification(state_dictionary, log):
     ekf_critical_flags= {
         0: "EKF_ATTITUDE (Tilt roll/pitch)",
         1: "EKF_VEL_VERT (Vitesse verticale)",
@@ -347,7 +347,7 @@ def sensors_verification(state_dictionary):
 
     ekf_verification = True
 
-    message = state_dictionary("EKF_sensors")
+    message = state_dictionary["EKF_sensors"]
 
     if message is None:
         return False
@@ -356,77 +356,74 @@ def sensors_verification(state_dictionary):
 
     for bit, name in ekf_critical_flags.items():
         if not (flags & (1 << bit)):
-           print(f"EKF flag critique non OK: bit {name}")
+           log(f"EKF flag critique non OK: bit {name}")
            ekf_verification = False
     if ekf_verification:
-        print("EKF stable et tous les capteurs critiques OK")
         return True 
     else:
         return False
 
-def GPS_verification(state_dictionary):
+def GPS_verification(state_dictionary, log):
     msg = state_dictionary["GPS"]
 
     if msg is None:
-        print("GPS non reçu")
+        log("GPS non reçu")
         return False 
     elif msg.fix_type >= 3 and msg.satellites_visible >= 6:
         return True 
     else:
-        print(f"GPS faible (fix={msg.fix_type}, sats={msg.satellites_visible})")  
+        log(f"GPS faible (fix={msg.fix_type}, sats={msg.satellites_visible})")  
         return False  
+  
 
-def ask_for_failsafes(state_dictionary, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, failsafe_threshold):
-    
-    if not GPS_verification(state_dictionary):
+def ask_for_failsafes(state_dictionary, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, failsafe_threshold, log):
+
+    if not GPS_verification(state_dictionary, log):
         GPS_failsafe_counter += 1
-        print(f"GPS faible depuis {GPS_failsafe_counter} cycles")
+        log(f"GPS faible depuis {GPS_failsafe_counter} cycles")
     else:
         GPS_failsafe_counter = 0  # reset compteur si GPS OK
 
     if GPS_failsafe_counter >=  failsafe_threshold:
-        print("Failsafe GPS")
+        log("Failsafe GPS")
         return False, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter 
     
-    if not battery_verification(state_dictionary):
+    if not battery_verification(state_dictionary, log):
         battery_failsafe_counter += 1 
     else:
         battery_failsafe_counter = 0 
-    if battery_failsafe_counter > failsafe_threshold:
-        print('Failsafe batterie')
+    if battery_failsafe_counter >= failsafe_threshold:
+        log('Failsafe batterie')
         return False, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter 
     
-    if not sensors_verification(state_dictionary):
+    if not sensors_verification(state_dictionary, log):
         sensors_failsafe_counter += 1
     else: 
         sensors_failsafe_counter = 0 
-    if sensors_failsafe_counter > failsafe_threshold:
-        print('Failsafe sur les capteurs')
+    if sensors_failsafe_counter >= failsafe_threshold:
+        log('Failsafe sur les capteurs')
         return False, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter
         
     return True, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter 
 
-def threading_failsafes(state_dictionary, stop_event):
+def threading_failsafes(state_dictionary, stop_event, log):
     GPS_failsafe_counter = 0
     sensors_failsafe_counter = 0
     battery_failsafe_counter = 0  
     failsafe_threshold= 10                                       ## nombre de cycles consécutifs avant déclenchement d'un failsafe                              
-    override_counter = 0 
 
     while not stop_event.is_set():                              ## tant qu'un failsafe n'a pas été déclaré, on n'arrète pas le programme 
-        ok, GPS_counter, sensors_counter, battery_counter = ask_for_failsafes(state_dictionary, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, failsafe_threshold)
+        ok, GPS_counter, sensors_counter, battery_counter = ask_for_failsafes(state_dictionary, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, failsafe_threshold, log)
         
         GPS_failsafe_counter = GPS_counter
         sensors_failsafe_counter = sensors_counter
         battery_failsafe_counter = battery_counter
 
         if not ok:
-            print("Failsafe critique détecté. Arrêt du programme.")
+            log("Failsafe critique détecté. Arrêt du programme.")
             stop_event.set()
-            break
-        sleep(1)
-
-    return 
+            return
+        sleep(0.2)
 
 #==========Thread sur les manoeuvres ==========
 
@@ -466,7 +463,9 @@ def thread_maneuvers(state_dictionary, clean_dico_maneuvers, stop_event, master)
 		
 #==========Main non complet ==========
 
-def main(master, mission, dic_mission):        
+def main(master, mission, dico_maneuver, log):        
+
+    log("Démarrage du script de mission...")
 
     state_dictionary = {                                    ## attention a le mettre en global 
     "battery" : None,
@@ -480,38 +479,46 @@ def main(master, mission, dic_mission):
     "vitesse": None
     }
 
-    clean_dico_maneuvers = create_clean_dico_maneuver(dic_mission)       
-    take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None)
+    clean_dico_maneuvers = create_clean_dico_maneuver(dico_maneuver)      
 
-    stop_event = threading.Event()      
-    
+    take_off(master, log, alt = 50,thr_max = 100, pitch = None,initial_pitch = None)
+
+    stop_event = threading.Event()     
+
+    log("takeoff bien effectue")
 
     try:     
         thread_mavlink = threading.Thread(target=read_mav_mess, args=(master, state_dictionary), daemon=True)
-        thread_mavlink = threading.start()
+        thread_mavlink.start()
         sleep(3)
 
-        thread_failsafe = threading.Thread(target = threading_failsafes, arg =(state_dictionary, stop_event), daemon = True)
-        thread_failsafe = threading.start()
+        log("Démarrage du thread mavlink...")
 
-        thread_on_maneuvers = threading.Thread(target = thread_maneuvers, arg =(state_dictionary, clean_dico_maneuvers, stop_event, master), daemon = True)
-        thread_on_maneuvers = threading.start()
+        thread_failsafe = threading.Thread(target = threading_failsafes, args =(state_dictionary, stop_event, log), daemon = True)
+        thread_failsafe.start()
+
+        log("Démarrage du thread failsafe...")
+
+        thread_on_maneuvers = threading.Thread(target = thread_maneuvers, args =(state_dictionary, clean_dico_maneuvers, stop_event, master), daemon = True)
+        thread_on_maneuvers.start()
+
+        log("Démarrage du thread maneouvre...")
 
         while True: 
             if stop_event.is_set(): 
                 fct.set_mode(master, 'LOITER' )
-                print("Failsafe actif, en attente d'intervention pilote")
+                log("Failsafe actif, en attente d'intervention pilote")
                 
                 start_time = time.time()
                 while not wait_for_pilot_signals(master):
                     if time.time() - start_time > 60:
                         fct.set_mode(master,'LAND')                 ## atterrissage d'urgence si le pilote ne prend pas la situation en main 
-                        print('pas de pilote détécté, atterrissage forcé')
+                        log('pas de pilote détécté, atterrissage forcé')
                         return
                     sleep(0.25)
             sleep(0.1)
     except KeyboardInterrupt:
-        print("\nDéconnexion.")
+        log("\nDéconnexion.")
         return 
     
 
