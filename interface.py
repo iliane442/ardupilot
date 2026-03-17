@@ -438,6 +438,8 @@ for i in range(len(noms_parametres)-1):
     frame_waypoint_entry = ctk.CTkEntry(frame_waypoint, placeholder_text="Entrez la valeur...")
     frame_waypoint_entry.place(x=500, y=50*i+50)
     liste_entries.append(frame_waypoint_entry) # On garde une trace de l'entry
+    if i==3:
+        frame_waypoint_entry.insert(0, "2.5")
 frame_waypoint_label_value = ctk.CTkLabel(frame_waypoint, text=noms_parametres[4])
 frame_waypoint_label_value.place(x=400, y=250)
 
