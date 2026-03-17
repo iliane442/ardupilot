@@ -18,6 +18,7 @@ master = None
 mission = []
 dic_mission = {}
 scroll_width = 300
+log_queue = Queue()
 
 
 
@@ -320,7 +321,7 @@ def terminal_write(message):
     frame_launch_terminal.configure(state="disabled")
 
 
-log_queue = Queue()
+
 
 def process_log_queue():
     while not log_queue.empty():

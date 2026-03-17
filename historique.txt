@@ -13,3 +13,11 @@ WP 1: alt=100.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
 WP 2: alt=0.1, lat=-35.0, long=150.0, radius=2.5, cmd=LAND
 ------------------------------
 
+--- MISSION N°2 ---
+WP 0: alt=40.0, lat=-35.3632623, long=149.1652376, radius=2.5, cmd=TAKEOFF
+WP 1: alt=60.0, lat=-35.364, long=149.166, radius=2.5, cmd=WAYPOINT
+WP 2: alt=70.0, lat=-35.365, long=149.1665, radius=2.5, cmd=WAYPOINT
+WP 3: alt=60.0, lat=-35.3645, long=49.165, radius=2.5, cmd=WAYPOINT
+WP 4: alt=0.1, lat=-35.3635, long=149.1652, radius=2.5, cmd=LAND
+------------------------------
+
