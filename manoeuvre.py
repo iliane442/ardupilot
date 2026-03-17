@@ -45,6 +45,14 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 #Variables
 #Utilisateur
 	rep=""
+#Attitude
+	etat = fct.get_attitude(master)
+	alt_ini = etat["altitude"]
+	vit = etat["vitesse"]
+	vit_min = get_vit_min(master,5)
+
+#Affectation Globale
+	alt_cible = alt_ini+alt
 
 #Stabilité
 	stab = cor.alt(master,alt_cible)
@@ -54,11 +62,7 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
 	pitch_stab = stab["pitch"]
 	dt = stab["dt"]
 	
-#Attitude
-	etat = fct.get_attitude(master)
-	alt_ini = etat["altitude"]
-	vit = etat["vitesse"]
-	vit_min = get_vit_min(master,5)
+
 	
 
 	params_takeoff = {
@@ -69,8 +73,7 @@ def take_off(master,alt = 50,thr_max = 100,pitch = None,initial_pitch = None):
     "TKOFF_THR_MAX": thr_max,   # throttle max
 }
 
-#Affectation Globale
-	alt_cible = alt_ini+alt
+
 
 #Mesures de sécurité
 
@@ -123,6 +126,14 @@ def virage(master,angle=0,inclinaison=30):
 	global alt_cible
 
 #Variables
+
+#Attitude
+
+	etat = fct.get_attitude(master)
+	yaw = etat["yaw"]
+	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
+	
+
 #Stabilité
 
 	stab = cor.alt(master,alt_cible)
@@ -132,12 +143,7 @@ def virage(master,angle=0,inclinaison=30):
 	pitch_stab = stab["pitch"]
 	dt = stab["dt"]
 
-#Attitude
 
-	etat = fct.get_attitude(master)
-	yaw = etat["yaw"]
-	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
-	
 
 #Virage
 	fct.set_mode(master,'GUIDED')
@@ -171,12 +177,20 @@ def chgt_alt(master,hauteur = 0):
 
 #Variables Globale
 	global alt_cible
-#Vérifications
+
+#Vérifications et Affectation Globale
 	if alt_cible+hauteur >= 120:
 		return print ("commande ingnoré altitude max trop élevéeé")
 	else:
 		alt_cible=alt_cible+hauteur
 #Variables 
+
+#Altitude
+	etat = fct.get_attitude(master)
+	alt = etat["altitude"]
+	vit = etat["vitesse"]
+	vit_prec=vit
+
 #Stabilité
 	stab = cor.alt(master,alt_cible)
 	erreur = stab["erreur_prec"]
@@ -185,11 +199,7 @@ def chgt_alt(master,hauteur = 0):
 	thrust = stab["thrust"]
 	pitch_stab = stab["pitch"]
 	dt = stab["dt"]
-#Altitude
-	etat = fct.get_attitude(master)
-	alt = etat["altitude"]
-	vit = etat["vitesse"]
-	vit_prec=vit
+
 
 	fct.set_mode(master,'GUIDED')
 
@@ -237,15 +247,13 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 
 	global alt_cible
 
-#Variable Stabilité
+#Variables
 
-	alt_stab = cor.alt(master,alt_target=alt_cible,corr_thrust=False)
-	erreur_cum = stab["erreur_cum"]
-	erreur = stab["erreur_prec"]
-	pitch_stab = stab["pitch"]
+#Compteur
 
+	c=0
 
-#Variable d'attitude
+#Attitude
 
 	etat = fct.get_attitude(master)
 	alt = etat["altitude"]
@@ -255,13 +263,21 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 	acc_prec = 0 
 	yaw = etat["yaw"]
 
-	 
-	for i in range (30): # initialisation de l'avion en mode poussée minimale pendant 3 secondes
+#Stabilité
+
+	alt_stab = cor.alt(master,alt_target=alt_cible,corr_thrust=False)
+	erreur_cum = stab["erreur_cum"]
+	erreur = stab["erreur_prec"]
+	pitch_stab = stab["pitch"]
+
+#Initialisation de l'avion en mode poussée minimale pendant 3 secondes
+
+	for i in range (30): 
 		fct.send_attitude(master,0, pitch, 0, min_thrust)
 		time.sleep(0.1)
 
-	c=0
-	#Accélération
+#Accélération
+
 	while c<20: # accélération min-max jusqu'à atteindre un niveau ou l'accélération ne change plus (tolérance incluse) pendant assez longtemps
 		
 		acc_prec= acc
