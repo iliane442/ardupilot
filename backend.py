@@ -178,10 +178,10 @@ def add_home_waypoint(master, mission):
             lat = message.lat / 1e7
             long = message.lon / 1e7
             alt = message.relative_alt / 1000                       ## attention à ce que le GPS soit opérationnel avant de faire ca 
-            home_waypoint = waypoint(lat,long, alt)
+            home_waypoint = waypoint(alt,lat,long)
             mission.insert(0, home_waypoint)
             print(f'HOME = {lat}, {long}, {alt}')
-            return True 
+            return mission 
 
     print(' Impossible de recuperer la position Home ')
     return False
@@ -195,15 +195,6 @@ def translate_wp_command_in_Mav_command(wp):			## Les paramètres d'envoi ne son
         param3 = 0          
         param4 = 0          
         return cmd, param1, param2, param3, param4
-    
-    elif wp.command == 'TAKEOFF':
-        cmd = mavutil.mavlink.MAV_CMD_NAV_TAKEOFF
-        param1 = 15         # pitch de montée 
-        param2 = 0
-        param3 = 0
-        param4 = 0
-        return cmd, param1, param2, param3, param4
-
     elif wp.command == 'LAND':
         cmd = mavutil.mavlink.MAV_CMD_NAV_LAND
         param1 = 0          
@@ -222,11 +213,11 @@ def send_mission(master, dic_mission):
     for id in dic_mission:
         mission.append(dic_mission[id][0])
     master.mav.mission_clear_all_send( master.target_system, master.target_component)           ## permet d'effacer une potentielle mission déjà existante
-
+    mission = add_home_waypoint(master,mission)
     master.mav.mission_count_send( master.target_system, master.target_component,               ## on prépare l'envoie d'un certains nombres de waypoints 
     len(mission),
     mavutil.mavlink.MAV_MISSION_TYPE_MISSION )
-
+    
 
     waypoints_sent = set()  # garder la trace des seq déjà envoyés
 
@@ -433,15 +424,19 @@ def threading_failsafes(state_dictionary, stop_event, log):
 
 def maneuver_selection(maneuver, master):
     if "virage" in maneuver:
-        angle = maneuver.split("(")[1].split(")")[0]
+        angle = int(maneuver.split("(")[1].split(")")[0])
         virage(master,angle)
     elif "changement d'altitude" in maneuver:
-        hauteur = maneuver.split("(")[1].split(")")[0]
+        hauteur = int(maneuver.split("(")[1].split(")")[0])
         chgt_alt(master,hauteur)
     elif "S-turn" in maneuver:
-        nb_boucle = maneuver.split("(")[1].split(")")[0]
+        nb_boucle = int(maneuver.split("(")[1].split(")")[0])
         S_turn(master,nb_boucle)
-    #elif maneuver == "accélération/décélération":
+    elif maneuver == "variation rapide de poussée":
+        accel(master)
+    elif "accel" in maneuver:
+        vitesse = int(maneuver.split("(")[1].split(")")[0])
+        chgt_vit(master,vitesse)
     return 
 	
 def create_clean_dico_maneuver(dico_maneuver):          ## {1 : [liste_manoeuvre] , 2 : [liste_manoeuvre]]}
@@ -471,7 +466,7 @@ def thread_maneuvers(state_dictionary, clean_dico_maneuvers, stop_event, master)
 		
 #==========Main non complet ==========
 
-def main(master, mission, dico_maneuver, log):   
+def main(master, dic_mission, log):   
 	
     log("Démarrage du script de mission...")
 
@@ -493,7 +488,7 @@ def main(master, mission, dico_maneuver, log):
     
     stop_event = threading.Event()     
 
-    clean_dico_maneuvers = create_clean_dico_maneuver(dico_maneuver)      
+    clean_dico_maneuvers = create_clean_dico_maneuver(dic_mission)      
 
     log("Démarrage du thread mavlink...")
     thread_mavlink = threading.Thread(target=read_mav_mess, args=(master, state_dictionary), daemon=True)
@@ -501,8 +496,8 @@ def main(master, mission, dico_maneuver, log):
     sleep(3)
 
     log("debut du décollage")
-
-    take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None,initial_pitch = None)
+    alt_takeoff = dic_mission[1][0].alt
+    take_off(master, log, state_dictionary, alt_takeoff,thr_max = 100, pitch = None,initial_pitch = None)
 
     log("takeoff bien effectue")
 	
@@ -521,7 +516,7 @@ def main(master, mission, dico_maneuver, log):
         thread_on_maneuvers = threading.Thread(target = thread_maneuvers, args =(state_dictionary, clean_dico_maneuvers, stop_event, master), daemon = True)
         thread_on_maneuvers.start()
 
-        log("Démarrage du thread maneouvre...")
+        log("Démarrage du thread manoeuvre...")
 
         while True: 
             if stop_event.is_set(): 

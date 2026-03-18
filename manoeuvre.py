@@ -80,12 +80,9 @@ def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None
 #Décollage
 
 	fct.set_mode(master,'TAKEOFF')
-	log("on entre dans la boucle")
-	while vit < vit_min:
-		log(vit)	
+	while vit < vit_min:	
 		vit = state_dictionary["vitesse"]
 		time.sleep(0.1)
-	log("on sort de la boucle")
 	fct.set_mode(master,'GUIDED')
 	time.sleep(0.5)
 	stab = cor.alt(master,alt_cible)
@@ -152,10 +149,12 @@ def virage(master,angle=0,inclinaison=30):
 	
 		fct.send_attitude(master,inclinaison,pitch_prec,0,thrust)
 		time.sleep(dt)
+	fct.set_mode(master,'AUTO')
 
 #==========Virage en S==========
 
 def S_turn(master,nb_boucle=1,inclinaison=30):
+
 	virage(master,90,inclinaison)
 	for i in range (nb_boucle):
 		virage(master,180,-1*inclinaison)
@@ -168,12 +167,13 @@ def chgt_alt(master,hauteur = 0):
 
 #Variables Globale
 	global alt_cible
-
+	var_alt = hauteur - alt_cible
+	
 #Vérifications et Affectation Globale
-	if alt_cible+hauteur >= 120:
+	if hauteur >= 120:
 		return print ("commande ingnoré altitude max trop élevéeé")
-	else:
-		alt_cible=alt_cible+hauteur
+	else :
+		alt_cible = hauteur
 #Variables 
 
 #Altitude
@@ -196,16 +196,15 @@ def chgt_alt(master,hauteur = 0):
 
 # Changement d'altitude
 	while abs(alt_cible-alt)>5:
-
+		
 		etat = fct.get_attitude(master)
 		vit = etat["vitesse"]
 		alt = etat["altitude"]
 		vit_min = get_vit_min(master,5)
-		print(alt)
 
 		if vit > vit_min+1: # Sécurité pour empêcher la diminution de vitesse trop rapide associée au décrochage
-			fct.send_attitude(master,roll = 0,pitch = 20*copysign(1,hauteur),yaw = 0,thrust = 1)
-
+			fct.send_attitude(master,roll = 0,pitch = 20*copysign(1,var_alt),yaw = 0,thrust = 1)
+			print(alt_cible-alt)
 			vit_prec=vit
 			time.sleep(dt)
 
@@ -235,12 +234,13 @@ def chgt_alt(master,hauteur = 0):
 		thrust = stab["thrust"]
 		fct.send_attitude(master,0,pitch_prec,0,thrust)
 		time.sleep(dt)
+	fct.set_mode(master,'AUTO')
 
 #==========Accélération poussée min-poussée max==========
 
 def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décrochage
 #Variables Globales
-
+	
 	global alt_cible
 
 #Variables
@@ -268,7 +268,7 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 	dt=alt_stab["dt"]
 
 #Initialisation de l'avion en mode poussée minimale pendant 3 secondes
-
+	fct.set_mode(master,'GUIDED')
 	for i in range (30): 
 		fct.send_attitude(master,0, pitch_prec, 0, min_thrust)
 		time.sleep(0.1)
@@ -298,3 +298,15 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 		else:
 			c= max(0,c-1)
 		time.sleep(dt)
+	fct.set_mode(master,'AUTO')
+
+
+#==========Changement de poussée==========
+
+def chgt_vit(master,vitesse):
+	etat = fct.get_attitude(master)
+	pitch = etat['pitch']
+	fct.set_mode(master,'GUIDED')
+	fct.send_attitude(master,0, pitch, 0, vitesse)
+	fct.set_mode(master,'AUTO')
+	

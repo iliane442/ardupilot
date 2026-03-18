@@ -1,23 +1,34 @@
 --- MISSION N°1 ---
-WP 0: alt=100.0, lat=-35.0, long=150.0, radius=2.5, cmd=TAKEOFF
-   > Maneuver 0: take_off(100)
-   > Maneuver 1: vol en palier stabilisé
-   > Maneuver 2: accélération/décélération(0.7)
-   > Maneuver 3: changement d'altitude(80)
-WP 1: alt=100.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
-   > Maneuver 0: virage à (90) °
-   > Maneuver 1: changement d'altitude(60)
-   > Maneuver 2: changement d'altitude(100)
-   > Maneuver 3: oscillations en tangage
-   > Maneuver 4: S-turn(3)
-WP 2: alt=0.1, lat=-35.0, long=150.0, radius=2.5, cmd=LAND
+WP 1: alt=40.0, lat=-35.3632623, long=149.1652376, radius=2.5, cmd=WAYPOINT
+WP 2: alt=60.0, lat=-35.364, long=149.166, radius=2.5, cmd=WAYPOINT
+WP 3: alt=70.0, lat=-35.365, long=149.1665, radius=2.5, cmd=WAYPOINT
+WP 4: alt=60.0, lat=-35.3645, long=149.165, radius=2.5, cmd=WAYPOINT
+WP 5: alt=0.1, lat=-35.3635, long=149.1652, radius=2.5, cmd=LAND
 ------------------------------
 
 --- MISSION N°2 ---
-WP 0: alt=40.0, lat=-35.3632623, long=149.1652376, radius=2.5, cmd=TAKEOFF
-WP 1: alt=60.0, lat=-35.364, long=149.166, radius=2.5, cmd=WAYPOINT
-WP 2: alt=70.0, lat=-35.365, long=149.1665, radius=2.5, cmd=WAYPOINT
-WP 3: alt=60.0, lat=-35.3645, long=149.165, radius=2.5, cmd=WAYPOINT
-WP 4: alt=0.1, lat=-35.3635, long=149.1652, radius=2.5, cmd=LAND
+WP 1: alt=100.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
+   > Maneuver 1: accélération/décélération(0.7)
+   > Maneuver 2: virage à (90) °
+   > Maneuver 3: accélération/décélération(1)
+   > Maneuver 4: changement d'altitude(60)
+   > Maneuver 5: S-turn(1)
+   > Maneuver 6: changement d'altitude(20)
+WP 2: alt=110, lat=-35.0, long=150.0, radius=2.5, cmd=LAND
+------------------------------
+
+--- MISSION N°3 ---
+WP 1: alt=50.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
+WP 2: alt=0.1, lat=-35.3635, long=149.1652, radius=2.5, cmd=LAND
+------------------------------
+
+--- MISSION N°4 ---
+WP 1: alt=50.0, lat=-36.0, long=150.0, radius=2.5, cmd=WAYPOINT
+   > Maneuver 1: accélération/décélération(1)
+   > Maneuver 2: virage à (90) °
+   > Maneuver 3: changement d'altitude(100)
+   > Maneuver 4: S-turn(1)
+   > Maneuver 5: changement d'altitude(30)
+WP 2: alt=0.1, lat=-35.3635, long=149.1652, radius=2.5, cmd=LAND
 ------------------------------
 

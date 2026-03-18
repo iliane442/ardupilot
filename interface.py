@@ -11,8 +11,8 @@ from backend import pre_verification,check_mission, waypoint, main, send_mission
 from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
 
 
-type_waypoint=["WAYPOINT", "TAKEOFF", "LAND", "RTL", "LOITER", "GUIDED"]
-liste_manoeuvres=["take_off(x)","vol en palier stabilisé", "accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","oscillations en tangage","oscillations en roulis","variation rapide de poussée","S-turn(x)"]
+type_waypoint=["WAYPOINT", "RTL", "LOITER", "GUIDED", "LAND"]
+liste_manoeuvres=["accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","oscillations en tangage","oscillations en roulis","variation rapide de poussée","S-turn(x)"]
 arm=False
 master = None
 mission = []
@@ -40,7 +40,7 @@ def reset_scroll():
 
 def create_waypoint(dic=dic_mission):
     global mission
-    number_waypoints = len(dic)  # On utilise la longueur du dictionnaire pour déterminer le numéro du waypoint
+    number_waypoints = len(dic)+1  # On utilise la longueur du dictionnaire pour déterminer le numéro du waypoint
     try:
         if not 0 in liste_entries:
             assert all(float(entry.get()) for entry in liste_entries), "Veuillez mettre des int/float tous les champs avant de valider la mission."
@@ -70,37 +70,30 @@ def ajouter_waypoint_dico(wp,dic,num,page):
 
 def param_manoeuvre(choix):
     if choix == liste_manoeuvres[0]:
-        frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: altitude de décollage")
-        entry_manoeuvre.place(x=400, y=150)
-        return entry_manoeuvre
-    elif choix == liste_manoeuvres[1]:
-        entry_manoeuvre.place_forget()
-        return 0,0,0
-    elif choix == liste_manoeuvres[2]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: pourcentage de puissance (0-1)")
         entry_manoeuvre.place(x=400, y=150)
         return entry_manoeuvre
-    elif choix == liste_manoeuvres[3]:
+    elif choix == liste_manoeuvres[1]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: angle du virage")
         entry_manoeuvre.place(x=400, y=150)
         return entry_manoeuvre
-    elif choix == liste_manoeuvres[4]:
+    elif choix == liste_manoeuvres[2]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: altitude cible")
         entry_manoeuvre.place(x=400, y=150)
         return entry_manoeuvre
-    elif choix == liste_manoeuvres[5]:
+    elif choix == liste_manoeuvres[3]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}")
         entry_manoeuvre.place_forget()
         return 4,0,0
-    elif choix == liste_manoeuvres[6]:
+    elif choix == liste_manoeuvres[4]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}")
         entry_manoeuvre.place_forget()
         return 5,0,0
-    elif choix == liste_manoeuvres[7]:
+    elif choix == liste_manoeuvres[5]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}")
         entry_manoeuvre.place_forget()
         return 6,0,0
-    elif choix == liste_manoeuvres[8]:
+    elif choix == liste_manoeuvres[6]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: nombre de virage")
         entry_manoeuvre.place(x=400, y=150)
 
@@ -109,7 +102,7 @@ def ajouter_manoeuvre(choix, waypoint,val_manoeuvre):
         assert waypoint != "Aucun", "Veuillez choisir un waypoint avant d'ajouter des manoeuvres"
         num_waypoint=int(waypoint.split(":")[0].strip())
         dico = dic_mission[num_waypoint][2]  # Récupère le dictionnaire des manœuvres associées au waypoint
-        num_manoeuvres = len(dico)  # Nombre de manœuvres déjà associées au waypoint
+        num_manoeuvres = len(dico)+1  # Nombre de manœuvres déjà associées au waypoint
         if "(x)" in choix:
             choix = choix.replace("(x)",f"({val_manoeuvre})")  # Remplace (x) par la valeur entrée dans l'entry
             dico[num_manoeuvres] = [choix]
@@ -140,7 +133,7 @@ def suppression_dico(event,dico): # Permet de supprimer un élément d'un dictio
 
 def indexage(dico): # Permet de réindexer les éléments d'un dictionnaire après suppression pour éviter les trous dans la numérotation ( arg : dictionnaire )
     dico_bis={}
-    tmp=0
+    tmp=1
     for el in dico:
         dico_bis[tmp]=dico[el]
         dico_bis[tmp][1].configure(text=f" {tmp}:{dico[el][0]}") # Mise à jour du texte du widget avec le nouveau numéro
@@ -341,7 +334,7 @@ def lancer_mission():
     frame_launch_terminal.delete("1.0", "end")                       ## pour supprimer si on lance une mission deux fois d'affilée
     frame_launch_terminal.configure(state="disabled")
 
-    thread = threading.Thread(target=main, args=(master,mission, dic_mission, log), daemon = True)           
+    thread = threading.Thread(target=main, args=(master, dic_mission, log), daemon = True)           
     thread.start()
 
 
@@ -431,7 +424,7 @@ def load_mission(val):
                 )
                 wp_id = int(match_wp.group(1))
                 # On ajoute le WP au dico et à l'interface
-                ajouter_waypoint_dico(wp_obj, dic_mission, len(dic_mission), frame_waypoint_scroll_waypoint)
+                ajouter_waypoint_dico(wp_obj, dic_mission, wp_id, frame_waypoint_scroll_waypoint)
                 
                 # On prépare la string pour l'argument 'waypoint' de ajouter_manoeuvre
                 # Format: "ID: NomDuWP"
@@ -483,37 +476,6 @@ def envoyer_mission(master, dico):
         count
     )
 
-    for i in range(count):
-        # Attendre que le drone demande l'item spécifique (MISSION_REQUEST)
-        msg = master.recv_match(type=['MISSION_REQUEST'], blocking=True, timeout=5)
-        if not msg:
-            print("Erreur : Le drone n'a pas demandé le point suivant.")
-            return
-
-        wp_id = msg.seq # Le numéro du point demandé par le drone
-        data = dico[wp_id][0] # Ton objet waypoint
-
-        # 2. Envoyer le point de mission
-        master.mav.mission_item_int_send(
-            master.target_system,
-            master.target_component,
-            wp_id,
-            mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, # Altitude relative au décollage
-            mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,          # Commande standard
-            0, 1, # Current (0), Autocontinue (1)
-            0, data.radius, 0, 0, # Paramètres 1 à 4 (Orbit, Radius, etc.)
-            int(data.lat * 1e7),  # Latitude * 10^7
-            int(data.long * 1e7), # Longitude * 10^7
-            data.alt              # Altitude
-        )
-        print(f"Waypoint {wp_id} envoyé.")
-
-    # 3. Attendre l'accusé de réception final
-    ack = master.recv_match(type='MISSION_ACK', blocking=True, timeout=5)
-    if ack and ack.type == mavutil.mavlink.MAV_MISSION_ACCEPTED:
-        print("Mission acceptée par Mission Planner !")
-    else:
-        print("Erreur lors de la validation de la mission.")
 
 
 ########################################################################### Création de la fenêtre ###########################################################################
