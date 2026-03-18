@@ -4,7 +4,7 @@ from functions import get_attitude
 
 def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, corr_thrust=True, thrust=0.5):
 	"""Retourne les valeurs de thrust et pitch pour stabiliser l'altitude. 
-	Correcteur PD pour le tangage et PI pour la poussée 	
+	Correcteur PD pour le tangage et I pour la poussée 	
 	Si l'option de correction de poussé est désactivée la correction d'erreur sera plus brutale
     	- alt_target : altitude objectif de la stabilisation
       	- thrust : valeur initiale ou précédente
