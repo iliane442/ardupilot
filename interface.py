@@ -170,17 +170,17 @@ def armement():
     pre_verification(master, log)
     try:
         assert master is not None, "Veuillez connecter le véhicule avant de tenter d'armer."
-        if frame_configuration_armed.get() == 1:
-            frame_configuration_armed.configure(text="ARMED", progress_color="green")
+        if frame_launch_armed.get() == 1:
+            frame_launch_armed.configure(text="ARMED", progress_color="green")
             arm=True
             armed(master,arm)        
         else:
-            frame_configuration_armed.configure(text="NOT ARMED", progress_color="red")
+            frame_launch_armed.configure(text="NOT ARMED", progress_color="red")
             arm=False
             armed(master,arm)
     except AssertionError as e:
-        frame_configuration_armed.deselect()
-        frame_configuration_armed.configure(text="NOT ARMED", progress_color="red")
+        frame_launch_armed.deselect()
+        frame_launch_armed.configure(text="NOT ARMED", progress_color="red")
         arm=False
         item = ctk.CTkLabel(frame_configuration, text=str(e), font=("Arial", 12), text_color="red")
         item.pack(pady=10)
@@ -504,11 +504,13 @@ frame_menu_waypoint.place(x=500,y=230)
 frame_menu_manoeuvre = ctk.CTkButton(frame_menu, text="Manoeuvres", command=lambda: afficher_page(frame_menu,frame_manoeuvre), corner_radius=10,width=250, height=40)
 frame_menu_manoeuvre.place(x=500,y=280)
 frame_menu_close = ctk.CTkButton(frame_menu, text="nettoyage ports", command=nettoyage, corner_radius=10,width=250, height=40)
-frame_menu_close.place(x=500,y=330)
+frame_menu_close.place(x=500,y=430)
 frame_menu_launch = ctk.CTkButton(frame_menu, text="Lancement Mission", command=lambda: afficher_page(frame_menu, frame_launch), corner_radius=10,width=250,height=40)
-frame_menu_launch.place(x=500,y=380)
+frame_menu_launch.place(x=500,y=330)
 frame_menu_log = ctk.CTkButton(frame_menu, text="Journal de mission", command=lambda: afficher_page(frame_menu, frame_logs), corner_radius=10,width=250,height=40)
-frame_menu_log.place(x=500,y=430)
+frame_menu_log.place(x=500,y=380)
+frame_menu_save = ctk.CTkButton(frame_menu, text="save la mission", command=lambda: sauvegarder_historique(dic_mission), fg_color="green")
+frame_menu_save.place(x=140,y=630)
 
 ########################################################################### Gestion de la page manoeuvres ###########################################################################
 frame_manoeuvre = ctk.CTkFrame(app)
@@ -576,10 +578,7 @@ frame_configuration_name = ctk.CTkLabel(frame_configuration, text="Configuration
 frame_configuration_name.pack(pady=20)    
 frame_configuration_return = ctk.CTkButton(frame_configuration, text="Retour", command=lambda: afficher_page(frame_configuration,frame_menu), fg_color="gray")
 frame_configuration_return.pack(pady=10)
-frame_configuration_armed = ctk.CTkSwitch(frame_configuration, text="NOT ARMED", command=armement)
-frame_configuration_armed.pack(pady=40, padx=20)
 
-# Dans la section PID de frame_page3 
 axe_var = ctk.StringVar(value="Roll")
 menu_pid = ctk.CTkOptionMenu(frame_configuration, 
                              values=["Roll", "Pitch", "Yaw"], 
@@ -615,15 +614,17 @@ frame_launch = ctk.CTkFrame(app)
 frame_launch_name = ctk.CTkLabel(frame_launch, text="Lancement de la Mission", font=("Arial", 20), text_color="orange")
 frame_launch_name.pack(pady=20)
 frame_launch_return = ctk.CTkButton(frame_launch, text="Retour", command=lambda: afficher_page(frame_launch, frame_menu), fg_color="gray")
-frame_launch_return.pack(pady=10)
-frame_launch_return = ctk.CTkButton(frame_launch, text="envoyer un Missionplaner", command=lambda: send_mission(master,dic_mission), fg_color="gray")
-frame_launch_return.pack(pady=10)
-frame_launch_start_mission = ctk.CTkButton(frame_launch, text="Lancer la Mission", command=lancer_mission)
-frame_launch_start_mission.pack(pady=40)
+frame_launch_return.place(x=50,y=20)
+frame_launch_return = ctk.CTkButton(frame_launch, text="envoyer à Missionplaner", command=lambda: send_mission(master,dic_mission), fg_color="gray")
+frame_launch_return.place(x=50,y=70)
+frame_launch_armed = ctk.CTkSwitch(frame_launch, text="NOT ARMED", command=armement)
+frame_launch_armed.place(x=600, y=70)
+frame_launch_start_mission = ctk.CTkButton(frame_launch, text="Lancer la Mission", command=lancer_mission, width=100, height=50)
+frame_launch_start_mission.place(x=340,y=100)
 
 ## creation du terminal a l'intérieur 
 frame_launch_terminal = ctk.CTkTextbox(frame_launch, width=700, height=400, corner_radius=5)
-frame_launch_terminal.pack(pady=20)
+frame_launch_terminal.place(x=50,y=200)
 frame_launch_terminal.configure(state="disabled")
 
 ########################################################################### Gestion de la page des logs ###########################################################################
@@ -646,13 +647,12 @@ frame_log_scroll_mission.delete("1.0", "end") # Optionnel : efface l'ancien cont
 frame_log_scroll_mission.insert("1.0", text)  # On insère le contenu du .txt
 frame_log_scroll_mission.configure(state="disabled") # On le met en lecture seule
 
-# Bouton pour effacer les logs
-frame_log_clear = ctk.CTkButton(frame_logs, text="save la mission", command=lambda: sauvegarder_historique(dic_mission), fg_color="#721c24")
-frame_log_clear.pack(pady=5)
+
 frame_log_entry = ctk.CTkEntry(frame_logs)
 frame_log_entry.pack(pady=5)
-frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(frame_log_entry.get()), fg_color="green")
+frame_log_load = ctk.CTkButton(frame_logs, text="load la mission", command=lambda: load_mission(frame_log_entry.get()), fg_color="blue")
 frame_log_load.pack(pady=5)
+
 
 app.after(100, process_log_queue)
 app.mainloop()
