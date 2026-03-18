@@ -22,7 +22,7 @@ def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, cor
 #Variation max 
 	var_max = 1
 
-# Activation du correcteur pour la puissance moteur PI + pitch P
+# Activation du correcteur pour la puissance moteur I + pitch P
 	if corr_thrust:
 		if abs(alt-alt_target)<3:
 			erreur_cum += erreur * dt
