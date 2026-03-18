@@ -1,9 +1,0 @@
-[
-    [
-        "\n{0 : alt = 1.0; lat = 1.0; long = 1.0; radius = 1.0; co = TAKEOFF\n\t{0 : take_off(20)\n\t{1 : take_off(20)}",
-        "\n{1 : alt = 2.0; lat = 2.0; long = 2.0; radius = 2.0; co = LAND\n\t{0 : changement d'altitude(5)\n\t{1 : changement d'altitude(5)}"
-    ],
-    [
-        "\\n{0 : alt = 1.0; lat = 1.0; long = 1.0; radius = 1.0; co = RTL\\n\\t{0 : accélération/décélération()\\n\\t{1 : accélération/décélération()\\n\\t{2 : accélération/décélération()}}"
-    ]
-]
