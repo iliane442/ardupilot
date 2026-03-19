@@ -8,7 +8,7 @@ import re
 from queue import Queue 
 from datetime import datetime
 from backend import pre_verification,check_mission, waypoint, main, send_mission
-from functions import nettoyage,connection_vehicle2,lancement_sitl,armed,set_param
+from functions import nettoyage,connection_vehicle,lancement_sitl,armed,set_param
 
 
 type_waypoint=["WAYPOINT", "RTL", "LOITER", "GUIDED", "LAND"]
@@ -22,7 +22,7 @@ log_queue = Queue()
 
 
 
-def afficher_page(page,frame):
+def afficher_page(page : ctk.CTkFrame ,frame : ctk.CTkFrame):
     page.pack_forget()
     frame.pack(expand=True, fill="both")
     if frame == frame_manoeuvre:
@@ -30,7 +30,7 @@ def afficher_page(page,frame):
     if frame == frame_menu:
         affichage_mission(dic_mission)
 
-def affichage_liste(dic):
+def affichage_liste(dic : dict):
     for el in dic.keys():
         dic[el][1].grid(row=(el), column=0, sticky='w', pady=10)
 
@@ -38,7 +38,7 @@ def reset_scroll():
     for widget in framen_manoeuvre_scroll_manoeuvre.winfo_children():
         widget.grid_forget()
 
-def create_waypoint(dic=dic_mission):
+def create_waypoint(dic: dict = dic_mission):
     global mission
     number_waypoints = len(dic)+1  # On utilise la longueur du dictionnaire pour déterminer le numéro du waypoint
     try:
@@ -60,7 +60,7 @@ def create_waypoint(dic=dic_mission):
         item.place(x=400, y=300)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur
 
-def ajouter_waypoint_dico(wp,dic,num,page):
+def ajouter_waypoint_dico(wp : waypoint, dic : dict, num : int, page : ctk.CTkFrame):
     dic_manoeuvres={}
     dic[num]=[wp,dic_manoeuvres]
     item = ctk.CTkLabel(page, text=f" {num}:{dic[num][0]}", font=("Arial", 12), text_color="green",cursor="hand2",wraplength=scroll_width-10,justify="left")
@@ -68,7 +68,7 @@ def ajouter_waypoint_dico(wp,dic,num,page):
     dic[num].insert(-1,item)
     affichage_liste(dic)
 
-def param_manoeuvre(choix):
+def param_manoeuvre(choix : str ):
     if choix == liste_manoeuvres[0]:
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: pourcentage de puissance (0-1)")
         entry_manoeuvre.place(x=400, y=150)
@@ -97,7 +97,7 @@ def param_manoeuvre(choix):
         frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: nombre de virage")
         entry_manoeuvre.place(x=400, y=150)
 
-def ajouter_manoeuvre(choix, waypoint,val_manoeuvre):
+def ajouter_manoeuvre(choix : str, waypoint : waypoint,val_manoeuvre : str):
     try :
         assert waypoint != "Aucun", "Veuillez choisir un waypoint avant d'ajouter des manoeuvres"
         num_waypoint=int(waypoint.split(":")[0].strip())
@@ -121,8 +121,8 @@ def ajouter_manoeuvre(choix, waypoint,val_manoeuvre):
 
 
     
-def suppression_dico(event,dico): # Permet de supprimer un élément d'un dictionnaire et son widget associé à partir d'un clic sur le widget (arg : event du clic, dictionnaire dans lequel supprimer l'élément )
-    widget = event.widget
+def suppression_dico(event : Any,dico : dict): # Permet de supprimer un élément d'un dictionnaire et son widget associé à partir d'un clic sur le widget (arg : event du clic, dictionnaire dans lequel supprimer l'élément )
+    widget = event.widget # récupère le texte associé au widget
     num = int(widget.cget("text").split(":")[0].strip())  # Extraire le numéro de l'élément à supprimer
     dico[num][1].destroy()  # Supprimer le widget associé à l'élément
     del dico[num]  # Supprimer l'entrée du dictionnaire
@@ -131,7 +131,7 @@ def suppression_dico(event,dico): # Permet de supprimer un élément d'un dictio
     dico.update(dico_neuf)
     affichage_liste(dico)  # Réafficher la liste des éléments
 
-def indexage(dico): # Permet de réindexer les éléments d'un dictionnaire après suppression pour éviter les trous dans la numérotation ( arg : dictionnaire )
+def indexage(dico : dict): # Permet de réindexer les éléments d'un dictionnaire après suppression pour éviter les trous dans la numérotation ( arg : dictionnaire )
     dico_bis={}
     tmp=1
     for el in dico:
@@ -154,7 +154,7 @@ def rafraichir_menu_selection():
         options = [f"{k}: {v[0]}" for k, v in dic_mission.items()]
         frame_manoeuvre_menu_selection_waypoint.configure(values=options)
 
-def choix_waypoint(choix,dico=dic_mission):
+def choix_waypoint(choix : str,dico : dict = dic_mission):
     id = int(choix.split(":")[0].strip())
     waypoint_selectionne = dico[id][0]
     dico_manoeuvres = dico[id][2]
@@ -186,16 +186,16 @@ def armement():
         item.pack(pady=10)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur après 3 secondes    
 
-def connection_vehicle():
+def connection():
     item = ctk.CTkLabel(frame_menu, text="Connection en cours",text_color="green")
     item.place(x=10,y=20)
     lancement_sitl()
     global master
-    master = connection_vehicle2()
+    master = connection_vehicle()
     item.configure(text="Véhicule connecté",text_color="green")
     
 
-def check_mission_interface(dico):
+def check_mission_interface(dico : dict):
     try :
         assert len(dico)!=0, "La mission est vide. Veuillez ajouter au moins un waypoint avant de vérifier la mission."
         msg = check_mission(dico)
@@ -209,7 +209,7 @@ def check_mission_interface(dico):
 
 
 
-def charger_pid_actuels(axe_nom):
+def charger_pid_actuels(axe_nom : str):
     global master
     if master is None:
         label_status.configure(text="Drone non connecté", text_color="red")
@@ -307,7 +307,7 @@ def sauvegarder_pid():
     except ValueError:
         label_status.configure(text="Format invalide", text_color="red")
 
-def terminal_write(message):
+def terminal_write(message : str):
     frame_launch_terminal.configure(state="normal")
     frame_launch_terminal.insert("end", message)
     frame_launch_terminal.see("end")
@@ -324,7 +324,7 @@ def process_log_queue():
     app.after(50, process_log_queue)                ## pour relancer la fonction 50 ms plus tard 
 
 
-def log(message):
+def log(message : str):
     log_queue.put(str(message))                  ## file d'attente thread safe, pour remplacer print
 
 
@@ -338,7 +338,7 @@ def lancer_mission():
     thread.start()
 
 
-def sauvegarder_historique(dic_mission):
+def sauvegarder_historique(dic_mission : dict):
     nom_fichier = "historique.txt"
     try:
         open(nom_fichier,"a").close()
@@ -390,7 +390,7 @@ def sauvegarder_historique(dic_mission):
         app.after(3000, error_label.destroy)
 
 
-def load_mission(val):
+def load_mission(val : int):
     id = int(val)-1
     nom_fichier = "historique.txt"
     try:
@@ -445,7 +445,7 @@ def load_mission(val):
     except FileNotFoundError:
         return []
     
-def affichage_mission(dico):
+def affichage_mission(dico : dict):
     mission=""
     for wp_id in dico.keys():
             wp_data = dico[wp_id][0]
@@ -466,7 +466,7 @@ def affichage_mission(dico):
     frame_menu_scroll_mission.update()
 
 
-def envoyer_mission(master, dico):
+def envoyer_mission(master, dico : dict):
     count = len(dico)
     print(count)
     #envoie du nombre de waypoint
@@ -495,7 +495,7 @@ frame_menu_scroll_mission = ctk.CTkTextbox(frame_menu, width=400, height=500, fo
 frame_menu_scroll_mission.place(x=10, y=100)
 
 # Création et placement des boutons
-frame_menu_connect = ctk.CTkButton(frame_menu, text="connection du vehicule", command=connection_vehicle, corner_radius=10,width=250, height=40)
+frame_menu_connect = ctk.CTkButton(frame_menu, text="connection du vehicule", command=connection, corner_radius=10,width=250, height=40)
 frame_menu_connect.place(x=500,y=130)
 frame_menu_config = ctk.CTkButton(frame_menu, text="Config véhicule", command=lambda: afficher_page(frame_menu,frame_configuration), corner_radius=10,width=250, height=40)
 frame_menu_config.place(x=500,y=180)

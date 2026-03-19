@@ -7,7 +7,7 @@ from transforms3d.euler import euler2quat
 
 #==========Armement du vehicule==========
 
-def armed(master,x):
+def armed(master : mavutil.mavlink_connection,x : int):
 # ARM
 	master.mav.command_long_send(
 master.target_system,
@@ -28,7 +28,7 @@ x,0,0,0,0,0,0)
 
 #==========Controle du Mode==========
 
-def set_mode(master, mode_name):
+def set_mode(master : mavutil.mavlink_connection, mode_name : str):
     if mode_name not in master.mode_mapping():   # pour checker si le mode existe
         print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
         return False
@@ -42,7 +42,7 @@ def set_mode(master, mode_name):
 
 #==========Lecture Mode==========
 
-def read_mode(master):
+def read_mode(master : mavutil.mavlink_connection):
 
 	msg = master.recv_match(type='HEARTBEAT', blocking=True) # Récupérer le dernier message HEARTBEAT
 	mode_id = msg.custom_mode # Récupère l'id du mode actuel 
@@ -53,7 +53,7 @@ def read_mode(master):
 
 #==========Controle d'attitude==========
 
-def send_attitude(master,roll, pitch, yaw, thrust):
+def send_attitude(master : mavutil.mavlink_connection,roll : float, pitch : float, yaw : float, thrust : float):
 
 	roll_rad = radians(roll)
 	pitch_rad = radians(pitch)
@@ -72,7 +72,7 @@ def send_attitude(master,roll, pitch, yaw, thrust):
 
 #==========Lecture Attitude==========
 
-def get_attitude(master):
+def get_attitude(master : mavutil.mavlink_connection):
 	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
 	yaw = degrees(msg_ang.yaw)
 	roll=degrees(msg_ang.roll)
@@ -94,7 +94,7 @@ def get_attitude(master):
 	
 #==========Modification de paramètres==========
 
-def set_param(master,name, value):
+def set_param(master : mavutil.mavlink_connection,name : str, value : float):
 	print(f"Envoi de {name} = {value}")
 	master.mav.param_set_send(
         master.target_system,
@@ -109,17 +109,8 @@ def nettoyage():
    os.system('pkill -9 -f "ardu|mav|sim_vehicle"')
    return True
 
-def close(v):
-	v.close()
-	print("fermeture terminée")
-	return True
 
 def connection_vehicle():
-	python_cmd = 'from functions import connection_vehicle2; connection_vehicle2(); input("Terminé...")'
-	# On l'intègre dans la commande de terminal
-	subprocess.Popen(['lxterm', '-e', 'python3', '-c', python_cmd])
-
-def connection_vehicle2():
 	print("Connexion MAVLink")
 	master = mavutil.mavlink_connection('udp:127.0.0.1:14551')
 	print("Attente du heartbeat...")
