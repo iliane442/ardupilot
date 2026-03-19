@@ -7,7 +7,7 @@ from math import radians, sqrt, degrees, copysign
 
 #=========Controle de vitesse==========
 
-def get_vit_min(master, state_dictionary, masse,roll_angle=0):
+def get_vit_min(master : mavutil.mavlink_connection, state_dictionary : dict, masse : float, roll_angle : float = 0):
 	'''
 	La fonction gère une vitesse de décrochage simplifié
 	30° d’inclinaison = vitesse de décrochage majorée de 10 %
@@ -36,7 +36,7 @@ def get_vit_min(master, state_dictionary, masse,roll_angle=0):
 
 #==========Décollage==========
 
-def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None,initial_pitch = None):
+def take_off(master : mavutil.mavlink_connection, log : function, state_dictionary : dict, alt : float = 50, thr_max : float = 100, pitch : float = None, initial_pitch : float = None):
 
 #Variable globale
 	global alt_cible
@@ -106,7 +106,7 @@ def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None
 
 #==========Virage==========
 
-def virage(master, state_dictionary, angle=0,inclinaison=30):
+def virage(master : mavutil.mavlink_connection, state_dictionary : dict, angle : float = 0, inclinaison : float = 30):
 
 #Variables Globale
 
@@ -150,7 +150,7 @@ def virage(master, state_dictionary, angle=0,inclinaison=30):
 
 #==========Virage en S==========
 
-def S_turn(master,state_dictionary, nb_boucle=1,inclinaison=30):
+def S_turn(master : mavutil.mavlink_connection, state_dictionary : dict, nb_boucle : int = 1, inclinaison : float = 30):
 
 	virage(master,state_dictionary, 90,inclinaison)
 	for i in range (nb_boucle):
@@ -160,7 +160,7 @@ def S_turn(master,state_dictionary, nb_boucle=1,inclinaison=30):
 
 #==========Changement d'altitude==========	
 
-def chgt_alt(master, state_dictionary, hauteur = 0):
+def chgt_alt(master : mavutil.mavlink_connection, state_dictionary : dict, hauteur : float = 0):
 
 #Variables Globale
 	global alt_cible
@@ -234,7 +234,7 @@ def chgt_alt(master, state_dictionary, hauteur = 0):
 
 #==========Accélération poussée min-poussée max==========
 
-def accel(master, state_dictionary, min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décrochage
+def accel(master : mavutil.mavlink_connection, state_dictionary : dict, min_thrust : float = 0.3, max_thrust : float = 1):#vérifier la poussé min en décrochage
 #Variables Globales
 	
 	global alt_cible
@@ -297,7 +297,7 @@ def accel(master, state_dictionary, min_thrust=0.3,max_thrust=1):#vérifier la p
 
 #==========Changement de poussée==========
 
-def chgt_vit(master, state_dictionary, vitesse):
+def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, vitesse : float):
 	pitch = state_dictionary['pitch']
 	fct.set_mode(master,'GUIDED')
 	fct.send_attitude(master,0, pitch, 0, vitesse)
@@ -305,7 +305,7 @@ def chgt_vit(master, state_dictionary, vitesse):
 	
 #==========Oscillation tanguage==========
 
-def oscillation_tang(master, state_dictionary, pitch_max=10,nb_oscillation=5):
+def oscillation_tang(master : mavutil.mavlink_connection, state_dictionary : dict, pitch_max : float = 10, nb_oscillation : int = 5):
     vit_target = get_vit_min(master,state_dictionary, mass = 5)+2
     for i in (nb_oscillation):
         pitch= state_dictionary["pitch"]
