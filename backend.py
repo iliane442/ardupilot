@@ -284,9 +284,10 @@ def wait_for_pilot_signals(master):
 	
 #==========Thread sur les commandes Mavlink ==========
 
-def read_mav_mess(master, state_dictionary):        ## read mavlink messages
-    while True:                                                              
-        message  =  master.recv_match(blocking = False)                      ## on regarde en permanence les messages envoyés et on les met dans un dictionnaire d'état
+def read_mav_mess(master, state_dictionary, master_lock):        ## read mavlink messages
+    while True:    
+        with master_lock:                                                         
+            message  =  master.recv_match(blocking = False)                      ## on regarde en permanence les messages envoyés et on les met dans un dictionnaire d'état
         if message is None:                 
             sleep(0.01) 
         else:
@@ -422,21 +423,21 @@ def threading_failsafes(state_dictionary, stop_event, log):
 
 #==========Thread sur les manoeuvres ==========
 
-def maneuver_selection(maneuver, master):
+def maneuver_selection(maneuver, master, state_dictionary):
     if "virage" in maneuver:
         angle = int(maneuver.split("(")[1].split(")")[0])
-        virage(master,angle)
+        virage(master,state_dictionary, angle)
     elif "changement d'altitude" in maneuver:
         hauteur = int(maneuver.split("(")[1].split(")")[0])
-        chgt_alt(master,hauteur)
+        chgt_alt(master, state_dictionary, hauteur)
     elif "S-turn" in maneuver:
         nb_boucle = int(maneuver.split("(")[1].split(")")[0])
-        S_turn(master,nb_boucle)
+        S_turn(master,state_dictionary, nb_boucle)
     elif maneuver == "variation rapide de poussée":
-        accel(master)
+        accel(master, state_dictionary)
     elif "accel" in maneuver:
         vitesse = int(maneuver.split("(")[1].split(")")[0])
-        chgt_vit(master,vitesse)
+        chgt_vit(master,state_dictionary, vitesse)
     return 
 	
 def create_clean_dico_maneuver(dico_maneuver):          ## {1 : [liste_manoeuvre] , 2 : [liste_manoeuvre]]}
@@ -458,7 +459,7 @@ def thread_maneuvers(state_dictionary, clean_dico_maneuvers, stop_event, master)
             if num_waypoint in clean_dico_maneuvers:
                 maneuvers = clean_dico_maneuvers[num_waypoint]
                 for maneuver in maneuvers:
-                    maneuver_selection(maneuver, master)
+                    maneuver_selection(maneuver, master, state_dictionary)
                 clean_dico_maneuvers[num_waypoint] = []
             last_waypoint = num_waypoint
 
@@ -486,6 +487,7 @@ def main(master, dic_mission, log):
         log("Un des systèmes critiques de l'avion empêche le décollage")
         return 
     
+    master_lock = threading.Lock()
     stop_event = threading.Event()     
 
     clean_dico_maneuvers = create_clean_dico_maneuver(dic_mission)      
@@ -518,7 +520,7 @@ def main(master, dic_mission, log):
 
         log("Démarrage du thread manoeuvre...")
 
-        while True: 
+        while True:     
             if stop_event.is_set(): 
                 fct.set_mode(master, 'LOITER' )
                 log("Failsafe actif, en attente d'intervention pilote")
@@ -535,7 +537,6 @@ def main(master, dic_mission, log):
         log("\nDéconnexion.")
         return 
     
-
 
 
 
