@@ -504,7 +504,7 @@ def main(master, dic_mission, log):
     log("takeoff bien effectue")
 	
     try:     
-        thread_mavlink = threading.Thread(target=read_mav_mess, args=(master, state_dictionary), daemon=True)
+        thread_mavlink = threading.Thread(target=read_mav_mess, args=(master, state_dictionary, master_lock), daemon=True)
         thread_mavlink.start()
         sleep(3)
 
