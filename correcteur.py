@@ -1,10 +1,8 @@
-from functions import get_attitude
-
 #==========Correcteur d'altitude==========
 
-def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, corr_thrust=True, thrust=0.5):
+def alt(state_dictionary, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, corr_thrust=True, thrust=0.5):
 	"""Retourne les valeurs de thrust et pitch pour stabiliser l'altitude. 
-	Correcteur PD pour le tangage et I pour la poussée 	
+	Correcteur PD pour le tangage et PI pour la poussée 	
 	Si l'option de correction de poussé est désactivée la correction d'erreur sera plus brutale
     	- alt_target : altitude objectif de la stabilisation
       	- thrust : valeur initiale ou précédente
@@ -14,7 +12,7 @@ def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, cor
     	- La fonction devra être modifiée au niveau des saturateurs en prennant en compte les vitesses de décrochages.
       	- Avec les paramètres arduplanne de base ces saturateurs sont bon."""
 
-	alt = get_attitude(master)["altitude"]
+	alt = state_dictionary["altitude"]
 	erreur = alt_target - alt
 	derreur = (alt_prec-alt)/dt
 	alt_prec = alt
@@ -22,7 +20,7 @@ def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, cor
 #Variation max 
 	var_max = 1
 
-# Activation du correcteur pour la puissance moteur I + pitch P
+# Activation du correcteur pour la puissance moteur PI + pitch P
 	if corr_thrust:
 		if abs(alt-alt_target)<3:
 			erreur_cum += erreur * dt
@@ -52,7 +50,7 @@ def alt(master, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt=0.05, cor
 
 #==========Correcteur de vitesse==========
 
-def vit(master, vit_target, erreur_cum=0, dt=0.05):
+def vit(state_dictionary, vit_target, erreur_cum=0, dt=0.05):
 	'''Change la poussée pour atteindre la vitesse cible
 	Correcteur PI pour la poussée
 	-vit_target : vitesse objectif 
@@ -60,7 +58,7 @@ def vit(master, vit_target, erreur_cum=0, dt=0.05):
 	-vérification de l'oscillation de la poussé dans ce cas de figure non effectué
   '''
 
-	vitesse = get_attitude(master)["speed"]
+	vitesse = state_dictionary["vitesse"]
 	erreur = vit_target - vitesse
 	
 	thrust_prop= erreur*0.05 # correction rapide de la poussé terme proportionnel
@@ -73,8 +71,6 @@ def vit(master, vit_target, erreur_cum=0, dt=0.05):
 
 	thrust = 0.5+thrust_int+thrust_prop
 	thrust = max(0.3, min(thrust, 1))
-	print (pitch_prec)
-	print(thrust)
 	return {
         "thrust": thrust,
         "erreur_cum": erreur_cum,
@@ -83,13 +79,13 @@ def vit(master, vit_target, erreur_cum=0, dt=0.05):
 
 #==========Correcteur de cap==========
 
-def cap(master, cap_target):
+def cap(state_dictionary, cap_target):
 	'''Modifie le cap de l'appareil en effectuant des virages
 	Correcteur P pour l'inclinaison(roll)
 	-cap_target : cap objectif à maintenir ou atteindre (techniquement couplé à la fonction send_attitude peut effectuer un virage)
 	'''
 
-	cap = get_attitude(master)["yaw"]
+	cap = state_dictionary["yaw"]
 
 	erreur = (cap_target-cap+180)%360-180
 
@@ -102,3 +98,4 @@ def cap(master, cap_target):
         "roll": roll,
         "stabilite": stabilite,
     }
+
