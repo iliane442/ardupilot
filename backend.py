@@ -8,20 +8,20 @@ from manoeuvre import *
 
 
 class waypoint:
-    def __init__(self, altitude, latitude, longitude, radius = 5 , command = 'WAYPOINT'):
+    def __init__(self : waypoint, altitude : float, latitude : float, longitude : float, radius : float = 5 , command : str = 'WAYPOINT'):
         self.lat = latitude 
         self.long = longitude
         self.alt = altitude
         self.radius = radius            ## rayon autour duquel l'avion considère qu'il est passé par le checkpoint
         self.command = command 
 
-    def __str__(self):
+    def __str__(self : waypoint):
         return f" lat={self.lat}, long={self.long}, alt={self.alt}, radius={self.radius}, command={self.command}"
 
 
 ## Pré-verification des composants   
 
-def battery_pre_verification(master, log, blocking):
+def battery_pre_verification(master : mavutil.mavlink_connection, log : function, blocking : bool):
     message = master.recv_match(type='SYS_STATUS', blocking=blocking, timeout=2 if blocking else 0 )
     if message is None:
         return False
@@ -40,7 +40,7 @@ def battery_pre_verification(master, log, blocking):
     log("Batterie OK")
     return True 
 
-def GPS_pre_verification(master, log):
+def GPS_pre_verification(master : mavutil.mavlink_connection, log : function):
     message = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout = 2)
     if message is None:
         log('Impossible de connaitre les coordonnées GPS')
@@ -52,7 +52,7 @@ def GPS_pre_verification(master, log):
         log("GPS non prêt")
         return False
     
-def sensors_pre_verification(master, log, blocking):
+def sensors_pre_verification(master : mavutil.mavlink_connection, log : function, blocking : bool):
     ekf_critical_flags= {
         0: "EKF_ATTITUDE (Tilt roll/pitch)",
         1: "EKF_VEL_VERT (Vitesse verticale)",
@@ -82,7 +82,7 @@ def sensors_pre_verification(master, log, blocking):
     else:
         return False
 
-def pre_verification(master, log):
+def pre_verification(master : mavutil.mavlink_connection, log :function):
     
     if not battery_pre_verification(master, log, blocking = True):
         log('Impossible de lire la batterie')
@@ -97,7 +97,7 @@ def pre_verification(master, log):
 
     return True 	
 
-def ask_for_failsafes(master, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, battery_failsafe_threshold, failsafe_threshold):
+def ask_for_failsafes(master : mavutil.mavlink_connection, GPS_failsafe_counter : int, sensors_failsafe_counter, battery_failsafe_counter : int, battery_failsafe_threshold : int, failsafe_threshold : int):
     
     if not GPS_verification(master):
         GPS_failsafe_counter += 1
@@ -130,7 +130,7 @@ def ask_for_failsafes(master, GPS_failsafe_counter, sensors_failsafe_counter, ba
 	
 #==========Check et envoi de la mission==========
 
-def distance_meters(wp1,wp2):            ## pour calculer la distance entre deux waypoints ( sans prendre en compte l'altitude)
+def distance_meters(wp1 : waypoint, wp2 : waypoint):            ## pour calculer la distance entre deux waypoints ( sans prendre en compte l'altitude)
     R = 6371000  # rayon de la Terre en mètres
     phi1 = radians(wp1.lat)
     phi2 = radians(wp2.lat)
@@ -142,7 +142,7 @@ def distance_meters(wp1,wp2):            ## pour calculer la distance entre deux
     horizontal_distance = R * c
     return horizontal_distance
 
-def check_radius(wp1,wp2):
+def check_radius(wp1 : waypoint, wp2 : waypoint):
     horizontal_distance = distance_meters(wp1,wp2)
     vertical_distance = wp2.alt - wp1.alt
     real_distance = sqrt(horizontal_distance**2 + vertical_distance**2)
@@ -152,7 +152,7 @@ def check_radius(wp1,wp2):
         return True
 		
 
-def check_mission(dic_mission):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
+def check_mission(dic_mission : dict):                 					## permet de s'assurer que la mission respecte certaines règles minimales pour son bon fonctionnement   
     mission=[]
     for id in dic_mission:
         mission.append(dic_mission[id][0])
@@ -170,7 +170,7 @@ def check_mission(dic_mission):                 					## permet de s'assurer que 
             return f"Waypoint {i} trop haut ou trop bas : {wp_current.alt} m"        
     return 'Mission valide' 
 
-def add_home_waypoint(master, mission):
+def add_home_waypoint(master : mavutil.mavlink_connection, mission : list):
 
     for k in range(10):
         message = master.recv_match(type ='GLOBAL_POSITION_INT', blocking = True, timeout = 1)        
@@ -186,7 +186,7 @@ def add_home_waypoint(master, mission):
     print(' Impossible de recuperer la position Home ')
     return False
 	
-def translate_wp_command_in_Mav_command(wp):			## Les paramètres d'envoi ne sont pas les mêmes selon la commande du waypoint
+def translate_wp_command_in_Mav_command(wp : waypoint):			## Les paramètres d'envoi ne sont pas les mêmes selon la commande du waypoint
 
     if wp.command == 'WAYPOINT':
         cmd = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
@@ -208,7 +208,7 @@ def translate_wp_command_in_Mav_command(wp):			## Les paramètres d'envoi ne son
         return None
 
 
-def send_mission(master, dic_mission):
+def send_mission(master : mavutil.mavlink_connection, dic_mission : dict):
     mission=[]
     for id in dic_mission:
         mission.append(dic_mission[id][0])
@@ -255,7 +255,7 @@ def send_mission(master, dic_mission):
 		
 #==========Passage en mode manuel si failsafe==========
 
-def pilot_override_detected(msg):
+def pilot_override_detected(msg : str):
     deadband = 50
     if abs(msg.chan1_raw - 1500) > deadband:  # Roll
         return True
@@ -265,7 +265,7 @@ def pilot_override_detected(msg):
         return True
     return False
 
-def wait_for_pilot_signals(master):
+def wait_for_pilot_signals(master : mavutil.mavlink_connection):
     global override_counter
     override_threshold = 4 
     msg = master.recv_match(type='RC_CHANNELS', blocking=False)
@@ -284,7 +284,7 @@ def wait_for_pilot_signals(master):
 	
 #==========Thread sur les commandes Mavlink ==========
 
-def read_mav_mess(master, state_dictionary, master_lock):        ## read mavlink messages
+def read_mav_mess(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock):        ## read mavlink messages
     while True:    
         with master_lock:                                                         
             message  =  master.recv_match(blocking = False)                      ## on regarde en permanence les messages envoyés et on les met dans un dictionnaire d'état
@@ -312,7 +312,7 @@ def read_mav_mess(master, state_dictionary, master_lock):        ## read mavlink
 
 #==========Thread sur les failsafes ==========
 
-def battery_verification(state_dictionary, log):
+def battery_verification(state_dictionary : dict, log : function):
     message = state_dictionary["battery"]
     if message is None:
         return False
@@ -330,7 +330,7 @@ def battery_verification(state_dictionary, log):
 
     return True
 
-def sensors_verification(state_dictionary, log):
+def sensors_verification(state_dictionary : dict, log : function):
     ekf_critical_flags= {
         0: "EKF_ATTITUDE (Tilt roll/pitch)",
         1: "EKF_VEL_VERT (Vitesse verticale)",
@@ -359,7 +359,7 @@ def sensors_verification(state_dictionary, log):
     else:
         return False
 
-def GPS_verification(state_dictionary, log):
+def GPS_verification(state_dictionary : dict, log : function):
     msg = state_dictionary["GPS"]
 
     if msg is None:
@@ -372,7 +372,7 @@ def GPS_verification(state_dictionary, log):
         return False  
   
 
-def ask_for_failsafes(state_dictionary, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter, failsafe_threshold, log):
+def ask_for_failsafes(state_dictionary : dict, GPS_failsafe_counter : int, sensors_failsafe_counter : int, battery_failsafe_counter : int, failsafe_threshold : int, log : function):
 
     if not GPS_verification(state_dictionary, log):
         GPS_failsafe_counter += 1
@@ -402,7 +402,7 @@ def ask_for_failsafes(state_dictionary, GPS_failsafe_counter, sensors_failsafe_c
         
     return True, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter 
 
-def threading_failsafes(state_dictionary, stop_event, log):
+def threading_failsafes(state_dictionary : dict, stop_event, log : function):
     GPS_failsafe_counter = 0
     sensors_failsafe_counter = 0
     battery_failsafe_counter = 0  
