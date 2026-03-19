@@ -7,7 +7,7 @@ from math import radians, sqrt, degrees, copysign
 
 #=========Controle de vitesse==========
 
-def get_vit_min(master,masse,roll_angle=0):
+def get_vit_min(master, state_dictionary, masse,roll_angle=0):
 	'''
 	La fonction gère une vitesse de décrochage simplifié
 	30° d’inclinaison = vitesse de décrochage majorée de 10 %
@@ -25,7 +25,7 @@ def get_vit_min(master,masse,roll_angle=0):
 	else:
 		print ("décrochage fortement probable arrêt de la manoeuvre")
 		for i in range (30):
-			virage(master,0,0)
+			virage(master,state_dictionary,0,0)
 			time.sleep(0.1) 
 	P=masse*9.81 #N
 	rho=1 #kg/m^3
@@ -44,10 +44,9 @@ def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None
 #Variables internes
 
 	rep=""
-#	etat = fct.get_attitude(master)
 	alt_ini = state_dictionary["altitude"]
 	vit = state_dictionary["vitesse"]
-	vit_min = get_vit_min(master,5)
+	vit_min = get_vit_min(master, state_dictionary, 5)
 
 	alt_cible = alt_ini+alt
 
@@ -85,7 +84,7 @@ def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None
 		time.sleep(0.1)
 	fct.set_mode(master,'GUIDED')
 	time.sleep(0.5)
-	stab = cor.alt(master,alt_cible)
+	stab = cor.alt(state_dictionary,alt_target = alt_cible)
 	erreur = stab["erreur_cum"]
 	stabilite = stab["stabilite"]
 	thrust = stab["thrust"]
@@ -93,7 +92,7 @@ def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None
 	dt = stab["dt"]
 
 	while stabilite < 20:
-		stab=cor.alt(master,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
+		stab=cor.alt(state_dictionary,alt_target=alt_cible,thrust=thrust,erreur_cum=erreur,dt=dt)
 		if stab["stabilite"] == 0:
 			stabilite = 0
 		erreur = stab["erreur_cum"]
@@ -107,7 +106,7 @@ def take_off(master, log, state_dictionary, alt = 50,thr_max = 100, pitch = None
 
 #==========Virage==========
 
-def virage(master,angle=0,inclinaison=30):
+def virage(master, state_dictionary, angle=0,inclinaison=30):
 
 #Variables Globale
 
@@ -117,14 +116,13 @@ def virage(master,angle=0,inclinaison=30):
 
 #Attitude
 
-	etat = fct.get_attitude(master)
-	yaw = etat["yaw"]
+	yaw = state_dictionary["yaw"]
 	yaw_target = (yaw+angle*copysign(1,inclinaison)+180)%360-180
 	
 
 #Stabilité
 
-	stab = cor.alt(master,alt_cible)
+	stab = cor.alt(state_dictionary,alt_cible)
 	erreur_cum = stab["erreur_cum"]
 	alt_prec = stab["alt_prec"]
 	pitch_prec= stab ["pitch"]
@@ -138,10 +136,9 @@ def virage(master,angle=0,inclinaison=30):
 	fct.set_mode(master,'GUIDED')
 	while abs((yaw_target-yaw+180)%360-180) > 5:
 
-		etat = fct.get_attitude(master)
-		yaw = etat["yaw"]
+		yaw = state_dictionary["yaw"]
 
-		stab=cor.alt(master, alt_target=alt_cible, thrust=thrust, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt)
+		stab=cor.alt(state_dictionary, alt_target=alt_cible, thrust=thrust, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt)
 		erreur_cum = stab["erreur_cum"]
 		alt_prec = stab["alt_prec"]
 		pitch_prec= stab ["pitch"]
@@ -153,17 +150,17 @@ def virage(master,angle=0,inclinaison=30):
 
 #==========Virage en S==========
 
-def S_turn(master,nb_boucle=1,inclinaison=30):
+def S_turn(master,state_dictionary, nb_boucle=1,inclinaison=30):
 
-	virage(master,90,inclinaison)
+	virage(master,state_dictionary, 90,inclinaison)
 	for i in range (nb_boucle):
-		virage(master,180,-1*inclinaison)
-		virage(master,180,inclinaison)
-	virage(master,90,-1*inclinaison)
+		virage(master,state_dictionary,180,-1*inclinaison)
+		virage(master,state_dictionary,180,inclinaison)
+	virage(master,state_dictionary, 90,-1*inclinaison)
 
 #==========Changement d'altitude==========	
 
-def chgt_alt(master,hauteur = 0):
+def chgt_alt(master, state_dictionary, hauteur = 0):
 
 #Variables Globale
 	global alt_cible
@@ -171,19 +168,19 @@ def chgt_alt(master,hauteur = 0):
 	
 #Vérifications et Affectation Globale
 	if hauteur >= 120:
-		return print ("commande ingnoré altitude max trop élevéeé")
+		return print ("commande ignoré : altitude max trop élevée")
 	else :
 		alt_cible = hauteur
 #Variables 
 
 #Altitude
-	etat = fct.get_attitude(master)
-	alt = etat["altitude"]
-	vit = etat["vitesse"]
+
+	alt = state_dictionary["altitude"]
+	vit = state_dictionary["vitesse"]
 	vit_prec=vit
 
 #Stabilité
-	stab = cor.alt(master,alt_cible)
+	stab = cor.alt(state_dictionary,alt_target=alt_cible)
 	alt_prec= stab["alt_prec"]
 	pitch_prec= stab ["pitch"]
 	erreur_cum= stab["erreur_cum"]
@@ -197,10 +194,9 @@ def chgt_alt(master,hauteur = 0):
 # Changement d'altitude
 	while abs(alt_cible-alt)>5:
 		
-		etat = fct.get_attitude(master)
-		vit = etat["vitesse"]
-		alt = etat["altitude"]
-		vit_min = get_vit_min(master,5)
+		vit = state_dictionary["vitesse"]
+		alt = state_dictionary["altitude"]
+		vit_min = get_vit_min(master,state_dictionary, 5)
 
 		if vit > vit_min+1: # Sécurité pour empêcher la diminution de vitesse trop rapide associée au décrochage
 			fct.send_attitude(master,roll = 0,pitch = 20*copysign(1,var_alt),yaw = 0,thrust = 1)
@@ -210,7 +206,7 @@ def chgt_alt(master,hauteur = 0):
 
 # Stabilisation en cas de risque de décrochage
 		else: 
-			stab=cor.alt(master, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt, thrust=thrust)
+			stab=cor.alt(state_dictionary, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt, thrust=thrust)
 
 			erreur_cum = stab["erreur_cum"]
 			alt_prec = stab["alt_prec"]
@@ -224,7 +220,7 @@ def chgt_alt(master,hauteur = 0):
 
 #Stabilisation en fin de montée		
 	while stabilite < 20:
-		stab=cor.alt(master, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt, thrust=thrust)
+		stab=cor.alt(state_dictionary, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, dt=dt, thrust=thrust)
 		if stab["stabilite"] == 0:
 			stabilite = 0
 		erreur_cum = stab["erreur_cum"]
@@ -238,7 +234,7 @@ def chgt_alt(master,hauteur = 0):
 
 #==========Accélération poussée min-poussée max==========
 
-def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décrochage
+def accel(master, state_dictionary, min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décrochage
 #Variables Globales
 	
 	global alt_cible
@@ -251,17 +247,16 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 
 #Attitude
 
-	etat = fct.get_attitude(master)
-	alt = etat["altitude"]
-	vit = etat["vitesse"]
+	alt = state_dictionary["altitude"]
+	vit = state_dictionary["vitesse"]
 	vit_prec = 0.5*vit
 	acc= (vit-vit_prec)
 	acc_prec = 0 
-	yaw = etat["yaw"]
+	yaw = state_dictionary["yaw"]
 
 #Stabilité
 
-	alt_stab = cor.alt(master, alt_target=alt_cible, corr_thrust=False)
+	alt_stab = cor.alt(state_dictionary, alt_target=alt_cible, corr_thrust=False)
 	erreur_cum = alt_stab["erreur_cum"]
 	alt_prec = alt_stab["alt_prec"]
 	pitch_prec= alt_stab["pitch"]
@@ -278,14 +273,13 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 	while c<20: # accélération min-max jusqu'à atteindre un niveau ou l'accélération ne change plus (tolérance incluse) pendant assez longtemps
 		
 		acc_prec= acc
-		etat = fct.get_attitude(master)
-		alt = etat["altitude"]
-		vit = etat["vitesse"]
+		alt = state_dictionary["altitude"]
+		vit = state_dictionary["vitesse"]
 		acc = (vit-vit_prec)/dt
 		vit_prec = vit
 
-		cap_stab = cor.cap(master, cap_target=yaw)
-		alt_stab = cor.alt(master, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, corr_thrust=False)
+		cap_stab = cor.cap(state_dictionary, cap_target=yaw)
+		alt_stab = cor.alt(state_dictionary, alt_target=alt_cible, erreur_cum=erreur_cum, alt_prec=alt_prec, pitch_prec=pitch_prec, corr_thrust=False)
 
 		erreur_cum = alt_stab["erreur_cum"]
 		alt_prec = alt_stab["alt_prec"]
@@ -303,10 +297,24 @@ def accel(master,min_thrust=0.3,max_thrust=1):#vérifier la poussé min en décr
 
 #==========Changement de poussée==========
 
-def chgt_vit(master,vitesse):
-	etat = fct.get_attitude(master)
-	pitch = etat['pitch']
+def chgt_vit(master, state_dictionary, vitesse):
+	pitch = state_dictionary['pitch']
 	fct.set_mode(master,'GUIDED')
 	fct.send_attitude(master,0, pitch, 0, vitesse)
 	fct.set_mode(master,'AUTO')
 	
+#==========Oscillation tanguage==========
+
+def oscillation_tang(master, state_dictionary, pitch_max=10,nb_oscillation=5):
+    vit_target = get_vit_min(master,state_dictionary, mass = 5)+2
+    for i in (nb_oscillation):
+        pitch= state_dictionary["pitch"]
+
+        while pitch<pitch_max:
+            vit_stab = cor.vit(state_dictionary, vit_target= vit_target, erreur_cum=0, dt=0.05) 
+            thrust = vit_stab["thrust"] 
+            fct.send_attitude(master,0, pitch_max, 0, thrust)
+        while pitch>-pitch_max:
+            vit_stabc = cor.vit(state_dictionary, vit_target= vit_target, erreur_cum=0, dt=0.05) 
+            thrust = vit_stab["thrust"] 
+            fct.send_attitude(master,0, -pitch_max, 0, thrust)
