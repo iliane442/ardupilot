@@ -121,7 +121,7 @@ def ajouter_manoeuvre(choix : str, waypoint : waypoint,val_manoeuvre : str):
 
 
     
-def suppression_dico(event : Any,dico : dict): # Permet de supprimer un élément d'un dictionnaire et son widget associé à partir d'un clic sur le widget (arg : event du clic, dictionnaire dans lequel supprimer l'élément )
+def suppression_dico(event : any,dico : dict): # Permet de supprimer un élément d'un dictionnaire et son widget associé à partir d'un clic sur le widget (arg : event du clic, dictionnaire dans lequel supprimer l'élément )
     widget = event.widget # récupère le texte associé au widget
     num = int(widget.cget("text").split(":")[0].strip())  # Extraire le numéro de l'élément à supprimer
     dico[num][1].destroy()  # Supprimer le widget associé à l'élément

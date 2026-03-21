@@ -8,14 +8,14 @@ from manoeuvre import *
 
 
 class waypoint:
-    def __init__(self : waypoint, altitude : float, latitude : float, longitude : float, radius : float = 5 , command : str = 'WAYPOINT'):
+    def __init__(self, altitude : float, latitude : float, longitude : float, radius : float = 5 , command : str = 'WAYPOINT'):
         self.lat = latitude 
         self.long = longitude
         self.alt = altitude
         self.radius = radius            ## rayon autour duquel l'avion considère qu'il est passé par le checkpoint
         self.command = command 
 
-    def __str__(self : waypoint):
+    def __str__(self):
         return f" lat={self.lat}, long={self.long}, alt={self.alt}, radius={self.radius}, command={self.command}"
 
 
