@@ -60,7 +60,7 @@ def create_waypoint(dic: dict = dic_mission):
         item.place(x=400, y=300)
         app.after(3000, item.destroy)  # Supprimer le message d'erreur
 
-def ajouter_waypoint_dico(wp : waypoint, dic : dict, num : int, page : ctk.CTkFrame):
+def ajouter_waypoint_dico(wp : waypoint, dic : dict = dic_mission, num : int, page : ctk.CTkFrame):
     dic_manoeuvres={}
     dic[num]=[wp,dic_manoeuvres]
     item = ctk.CTkLabel(page, text=f" {num}:{dic[num][0]}", font=("Arial", 12), text_color="green",cursor="hand2",wraplength=scroll_width-10,justify="left")
