@@ -28,17 +28,19 @@ x,0,0,0,0,0,0)
 
 #==========Controle du Mode==========
 
-def set_mode(master : mavutil.mavlink_connection, mode_name : str):
-    if mode_name not in master.mode_mapping():   # pour checker si le mode existe
+def set_mode(master : mavutil.mavlink_connection, mode_name : str, master_lock : any):
+    if mode_name not in master.mode_mapping():   # Vérifie si le mode existe
         print(f"Erreur : Le mode '{mode_name}' n'est pas reconnu par l'avion.")
         return False
 
-    mode_id = master.mode_mapping()[mode_name] # on recupere l'identifiant parmis tous les modes
+    mode_id = master.mode_mapping()[mode_name]  # Récupère l'identifiant du mode
 
-    master.mav.set_mode_send(
-        master.target_system,
-        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-        mode_id)
+    with master_lock: 
+        master.mav.set_mode_send(
+            master.target_system,
+            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+            mode_id)
+    return True
 
 #==========Lecture Mode==========
 
@@ -53,56 +55,37 @@ def read_mode(master : mavutil.mavlink_connection):
 
 #==========Controle d'attitude==========
 
-def send_attitude(master : mavutil.mavlink_connection,roll : float, pitch : float, yaw : float, thrust : float):
+def send_attitude(master : mavutil.mavlink_connection, master_lock : any, roll : float, pitch : float, yaw : float, thrust : float):
 
 	roll_rad = radians(roll)
 	pitch_rad = radians(pitch)
 	yaw_rad = radians(yaw)
 
 	q = euler2quat(roll_rad, pitch_rad, yaw_rad)
-	master.mav.set_attitude_target_send(
-        0,
-        master.target_system,
-        master.target_component,
-        0b00000111,
-        q,
-        0,0,0,
-        thrust
-    )
+	with master_lock:
+		master.mav.set_attitude_target_send(
+			0,
+			master.target_system,
+			master.target_component,
+			0b00000111,
+			q,
+			0,0,0,
+			thrust
+		)
 
-#==========Lecture Attitude==========
 
-def get_attitude(master : mavutil.mavlink_connection):
-	msg_ang = master.recv_match(type='ATTITUDE', blocking=True)
-	yaw = degrees(msg_ang.yaw)
-	roll=degrees(msg_ang.roll)
-	pitch=degrees(msg_ang.pitch)
-
-	msg_pos = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
-	altitude = msg_pos.relative_alt / 1000
-
-	msg_vit = master.recv_match(type='VFR_HUD', blocking=True)
-	vit=msg_vit.groundspeed	
-
-	return {
-        "yaw": yaw,
-        "roll": roll,
-        "pitch": pitch,
-        "altitude": altitude,
-        "vitesse": vit
-    }
-	
 #==========Modification de paramètres==========
 
-def set_param(master : mavutil.mavlink_connection,name : str, value : float):
+def set_param(master : mavutil.mavlink_connection,name : str, value : float, master_lock : any):
 	print(f"Envoi de {name} = {value}")
-	master.mav.param_set_send(
-        master.target_system,
-        master.target_component,
-        name.encode('utf-8'),
-        float(value),
-        mavutil.mavlink.MAV_PARAM_TYPE_REAL32
-)
+	with master_lock: 
+		master.mav.param_set_send(
+			master.target_system,
+			master.target_component,
+			name.encode('utf-8'),
+			float(value),
+			mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+		)
 
 def nettoyage():
    print("nettoyage des scripts")
