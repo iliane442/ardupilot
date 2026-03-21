@@ -2,7 +2,7 @@ from pymavlink import mavutil
 import subprocess
 import time
 import os
-from math import radians, sqrt, degrees, copysign
+from math import radians, sqrt, degrees, copysign, sin, cos, atan2, asin
 from transforms3d.euler import euler2quat
 
 #==========Armement du vehicule==========
@@ -126,3 +126,31 @@ def lancement_sitl():
 	print("🚀 Lancement de SITL...")
 	sitl_proc = subprocess.Popen(["python3", "./Tools/autotest/sim_vehicle.py", "-v", "ArduPlane", "--out", "udp:127.0.0.1:14550", "--out", "udp:127.0.0.1:14551"], cwd=ardupilot_dir)
 	return True
+
+
+# Calcule un point à une certaine distance (en mètres) derrière un point donné.
+    azimut_deg : direction vers laquelle l'avion pointe (0=Nord, 90=Est, 180=Sud, 270=Ouest)
+
+
+def calculer_point_arriere(lat, lon, distance_m=100, azimut_deg=0):
+    
+    
+    
+    R = 6378137.0 # Rayon de la Terre en mètres
+
+    # On veut aller à l'opposé de l'azimut (derrière l'avion)
+    angle_arriere = (azimut_deg + 180) % 360
+    brng = math.radians(angle_arriere)
+
+    lat1 = math.radians(lat)
+    lon1 = math.radians(lon)
+
+    # Calcul de la nouvelle latitude
+    lat2 = math.asin(math.sin(lat1) * math.cos(distance_m/R) +
+                     math.cos(lat1) * math.sin(distance_m/R) * math.cos(brng))
+
+    # Calcul de la nouvelle longitude
+    lon2 = lon1 + math.atan2(math.sin(brng) * math.sin(distance_m/R) * math.cos(lat1),
+                             math.cos(distance_m/R) - math.sin(lat1) * math.sin(lat2))
+
+    return lat2, lon2
