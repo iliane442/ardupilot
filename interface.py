@@ -246,9 +246,9 @@ def charger_pid_actuels(axe_nom : str):
                 
             # 2. Boucle pour filtrer les messages et trouver le bon PARAM_VALUE
             found = False
-            timeout_timer = time.time() + 2.0  # 2 secondes max par paramètre
+            timeout_timer = time() + 2.0  # 2 secondes max par paramètre
 
-            while time.time() < timeout_timer:
+            while time() < timeout_timer:
                 # On écoute le flux (non-bloquant avec un petit timeout interne)
                 msg = master.recv_match(type='PARAM_VALUE', blocking=True, timeout=0.1)
 
