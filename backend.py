@@ -253,8 +253,7 @@ def pilot_override_detected(msg):                               ## l'argument es
         return True
     return False
 
-def wait_for_pilot_signals(master: mavutil.mavlink_connection):
-    global override_counter                      ## on veut être sur que le pilote bouge la manette   
+def wait_for_pilot_signals(master: mavutil.mavlink_connection, master_lock :any, override_counter):  
     override_threshold = 4              
     msg = master.recv_match(type='RC_CHANNELS', blocking=False)
 
@@ -265,7 +264,7 @@ def wait_for_pilot_signals(master: mavutil.mavlink_connection):
     else:
         override_counter = 0
     if override_counter >= override_threshold:      
-        fct.set_mode(master, 'MANUAL')                   ## on passe en mode manuel et on laisse le pilote faire
+        fct.set_mode(master, 'MANUAL', master_lock)                   ## on passe en mode manuel et on laisse le pilote faire
         return True
 
     return False
@@ -300,7 +299,7 @@ def read_mav_mess(master: mavutil.mavlink_connection , state_dictionary : dict, 
             if message.get_type() == 'VFR_HUD':
                 state_dictionary["vitesse"] = message.airspeed
             sleep(0.01)                         ## on attend pour ne pas saturer le controleur de demande
-        return 
+    return 
 
 #==========Thread sur les failsafes ==========
 
@@ -433,24 +432,24 @@ def threading_failsafes(state_dictionary : dict, stop_event, log : any):
 
 #==========Thread sur les manoeuvres ==========
 
-def maneuver_selection(maneuver : dict, master : mavutil.mavlink_connection, state_dictionary : dict):
+def maneuver_selection(maneuver : list, master : mavutil.mavlink_connection, state_dictionary : dict, master_lock :any):
     '''
     On sélectionne la manoeuvre que l'on veut éffectuer avec ses différents paramètres
     '''
     if "virage" in maneuver:
         angle = int(maneuver.split("(")[1].split(")")[0])
-        virage(master,state_dictionary, angle)
+        virage(master,state_dictionary, master_lock, angle)
     elif "changement d'altitude" in maneuver:
         hauteur = int(maneuver.split("(")[1].split(")")[0])
-        chgt_alt(master, state_dictionary, hauteur)
+        chgt_alt(master, state_dictionary, master_lock, hauteur)
     elif "S-turn" in maneuver:
         nb_boucle = int(maneuver.split("(")[1].split(")")[0])
-        S_turn(master,state_dictionary, nb_boucle)
+        S_turn(master,state_dictionary, master_lock, nb_boucle)
     elif maneuver == "variation rapide de poussée":
-        accel(master, state_dictionary)
+        accel(master, state_dictionary, master_lock)
     elif "accel" in maneuver:
         vitesse = int(maneuver.split("(")[1].split(")")[0])
-        chgt_vit(master,state_dictionary, vitesse)
+        chgt_vit(master,state_dictionary, master_lock, vitesse)
     return 
 	
 def create_clean_dico_maneuver(dico_maneuver : dict):          ## {1 : [liste_manoeuvre] , 2 : [liste_manoeuvre]]}
@@ -461,7 +460,7 @@ def create_clean_dico_maneuver(dico_maneuver : dict):          ## {1 : [liste_ma
     return clean_dict
 
 
-def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_event, master : mavutil.mavlink_connection):
+def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_event, master : mavutil.mavlink_connection, master_lock : any):
     last_waypoint = None                        ## on va mémoriser le dernier waypoint pour ne pas refaire les manoeuvres deux fois 
 
     while not stop_event.is_set():              ## tant qu'on a pas de problème de failsafe, le programme continue
@@ -472,7 +471,7 @@ def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_
             if num_waypoint in clean_dico_maneuvers:
                 maneuvers = clean_dico_maneuvers[num_waypoint]
                 for maneuver in maneuvers:                              ## on effectue les manoeuvres à la suite 
-                    maneuver_selection(maneuver, master, state_dictionary)
+                    maneuver_selection(maneuver, master, state_dictionary, master_lock)
                 clean_dico_maneuvers[num_waypoint] = []             ## sécurité supplémentaire optionnelle
             last_waypoint = num_waypoint
 
@@ -496,6 +495,7 @@ def main(master : mavutil.mavlink_connection, dic_mission : dict, log : any):
     "vitesse": None
     }
 
+    override_counter = 0                                                ## paramètre pour permettre l'intervention pilote en cas de défaillance
     if pre_verification(master,log) == False:                               ## on vérifie que l'avion peut décoller
         log("Un des systèmes critiques de l'avion empêche le décollage")
         return 
@@ -512,7 +512,7 @@ def main(master : mavutil.mavlink_connection, dic_mission : dict, log : any):
 
     log("debut du décollage")
     alt_takeoff = dic_mission[1][0].alt                         ## on regarde a quelle altitude on veut décoller 
-    take_off(master, log, state_dictionary, alt_takeoff,thr_max = 100, pitch = None,initial_pitch = None)   ## décollage automatique
+    take_off(master, log, state_dictionary, master_lock, alt_takeoff,thr_max = 100, pitch = None,initial_pitch = None)   ## décollage automatique
 
     log("takeoff bien effectue")
 	
@@ -522,20 +522,20 @@ def main(master : mavutil.mavlink_connection, dic_mission : dict, log : any):
 
         log("Démarrage du thread failsafe...")
 
-        thread_on_maneuvers = threading.Thread(target = thread_maneuvers, args =(state_dictionary, clean_dico_maneuvers, stop_event, master), daemon = True)
+        thread_on_maneuvers = threading.Thread(target = thread_maneuvers, args =(state_dictionary, clean_dico_maneuvers, stop_event, master, master_lock), daemon = True)
         thread_on_maneuvers.start()
 
         log("Démarrage du thread manoeuvre...")
 
         while True:     
             if stop_event.is_set():                         ## en cas de problème
-                fct.set_mode(master, 'LOITER' )             ## l'avion tourne en rond en attente d'instructions
+                fct.set_mode(master, 'LOITER', master_lock)             ## l'avion tourne en rond en attente d'instructions
                 log("Failsafe actif, en attente d'intervention pilote")
                 
-                start_time = time.time()                    ## threads fermé, on démarre un timer
-                while not wait_for_pilot_signals(master):   ## tant que le pilote n'a pas répondu
-                    if time.time() - start_time > 60:       ## si on a attendu plus de 60 secondes
-                        fct.set_mode(master,'LAND')                 ## atterrissage d'urgence 
+                start_time = time()                             ## threads fermé, on démarre un timer
+                while not wait_for_pilot_signals(master, master_lock, override_counter):   ## tant que le pilote n'a pas répondu
+                    if time() - start_time > 60:       ## si on a attendu plus de 60 secondes
+                        fct.set_mode(master,'LAND', master_lock)                 ## atterrissage d'urgence 
                         log('pas de pilote détécté, atterrissage forcé')
                         return
                     sleep(0.25)                             ## on attend 0.25 secondes
