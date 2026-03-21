@@ -7,7 +7,7 @@ from math import radians, sqrt, degrees, copysign
 
 #=========Controle de vitesse==========
 
-def get_vit_min(master : mavutil.mavlink_connection, state_dictionary : dict, masse : float, roll_angle : float = 0):
+def get_vit_min(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock :any, masse : float, roll_angle : float = 0):
 	'''
 	La fonction gère une vitesse de décrochage simplifié
 	30° d’inclinaison = vitesse de décrochage majorée de 10 %
@@ -25,7 +25,7 @@ def get_vit_min(master : mavutil.mavlink_connection, state_dictionary : dict, ma
 	else:
 		print ("décrochage fortement probable arrêt de la manoeuvre")
 		for i in range (30):
-			virage(master,state_dictionary,0,0)
+			virage(master,state_dictionary, master_lock, 0,0)
 			time.sleep(0.1) 
 	P=masse*9.81 #N
 	rho=1 #kg/m^3
@@ -36,7 +36,7 @@ def get_vit_min(master : mavutil.mavlink_connection, state_dictionary : dict, ma
 
 #==========Décollage==========
 
-def take_off(master : mavutil.mavlink_connection, log : any, state_dictionary : dict, alt : float = 50, thr_max : float = 100, pitch : float = None, initial_pitch : float = None):
+def take_off(master : mavutil.mavlink_connection, log : any, state_dictionary : dict, master_lock :any, alt : float = 50, thr_max : float = 100, pitch : float = None, initial_pitch : float = None):
 
 #Variable globale
 	global alt_cible
@@ -46,7 +46,7 @@ def take_off(master : mavutil.mavlink_connection, log : any, state_dictionary : 
 	rep=""
 	alt_ini = state_dictionary["altitude"]
 	vit = state_dictionary["vitesse"]
-	vit_min = get_vit_min(master, state_dictionary, 5)
+	vit_min = get_vit_min(master, state_dictionary, master_lock, 5)
 
 	alt_cible = alt_ini+alt
 
@@ -74,15 +74,15 @@ def take_off(master : mavutil.mavlink_connection, log : any, state_dictionary : 
 
 	for name, value in params_takeoff.items():
 		if value is not None:
-			fct.set_param(master,name, value)
+			fct.set_param(master,name, value, master_lock)
 
 #Décollage
 
-	fct.set_mode(master,'TAKEOFF')
+	fct.set_mode(master,'TAKEOFF', master_lock)
 	while vit < vit_min:	
 		vit = state_dictionary["vitesse"]
 		time.sleep(0.1)
-	fct.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED', master_lock)
 	time.sleep(0.5)
 	stab = cor.alt(state_dictionary,alt_target = alt_cible)
 	erreur = stab["erreur_cum"]
@@ -100,13 +100,13 @@ def take_off(master : mavutil.mavlink_connection, log : any, state_dictionary : 
 		thrust = stab["thrust"]
 		pitch_stab = stab["pitch"]
 		dt = stab["dt"]
-		fct.send_attitude(master,0,pitch_stab,0,thrust)
+		fct.send_attitude(master, master_lock, 0,pitch_stab,0,thrust)
 		time.sleep(dt)
-	fct.set_mode(master,'AUTO')
+	fct.set_mode(master,'AUTO', master_lock)
 
 #==========Virage==========
 
-def virage(master : mavutil.mavlink_connection, state_dictionary : dict, angle : float = 0, inclinaison : float = 30):
+def virage(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock : any, angle : float = 0, inclinaison : float = 30):
 
 #Variables Globale
 
@@ -133,7 +133,7 @@ def virage(master : mavutil.mavlink_connection, state_dictionary : dict, angle :
 
 
 #Virage
-	fct.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED', master_lock)
 	while abs((yaw_target-yaw+180)%360-180) > 5:
 
 		yaw = state_dictionary["yaw"]
@@ -144,23 +144,23 @@ def virage(master : mavutil.mavlink_connection, state_dictionary : dict, angle :
 		pitch_prec= stab ["pitch"]
 		thrust = stab["thrust"]
 	
-		fct.send_attitude(master,inclinaison,pitch_prec,0,thrust)
+		fct.send_attitude(master, master_lock, inclinaison,pitch_prec,0,thrust)
 		time.sleep(dt)
-	fct.set_mode(master,'AUTO')
+	fct.set_mode(master,'AUTO', master_lock)
 
 #==========Virage en S==========
 
-def S_turn(master : mavutil.mavlink_connection, state_dictionary : dict, nb_boucle : int = 1, inclinaison : float = 30):
+def S_turn(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock : any, nb_boucle : int = 1, inclinaison : float = 30):
 
-	virage(master,state_dictionary, 90,inclinaison)
+	virage(master,state_dictionary, master_lock, 90,inclinaison)
 	for i in range (nb_boucle):
-		virage(master,state_dictionary,180,-1*inclinaison)
-		virage(master,state_dictionary,180,inclinaison)
-	virage(master,state_dictionary, 90,-1*inclinaison)
+		virage(master,state_dictionary, master_lock, 180,-1*inclinaison)
+		virage(master,state_dictionary,master_lock, 180,inclinaison)
+	virage(master,state_dictionary, master_lock, 90,-1*inclinaison)
 
 #==========Changement d'altitude==========	
 
-def chgt_alt(master : mavutil.mavlink_connection, state_dictionary : dict, hauteur : float = 0):
+def chgt_alt(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock :any, hauteur : float = 0):
 
 #Variables Globale
 	global alt_cible
@@ -189,17 +189,17 @@ def chgt_alt(master : mavutil.mavlink_connection, state_dictionary : dict, haute
 	dt = stab["dt"]
 
 
-	fct.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED', master_lock)
 
 # Changement d'altitude
 	while abs(alt_cible-alt)>5:
 		
 		vit = state_dictionary["vitesse"]
 		alt = state_dictionary["altitude"]
-		vit_min = get_vit_min(master,state_dictionary, 5)
+		vit_min = get_vit_min(master,state_dictionary, master_lock, 5)
 
 		if vit > vit_min+1: # Sécurité pour empêcher la diminution de vitesse trop rapide associée au décrochage
-			fct.send_attitude(master,roll = 0,pitch = 20*copysign(1,var_alt),yaw = 0,thrust = 1)
+			fct.send_attitude(master, master_lock, roll = 0,pitch = 20*copysign(1,var_alt),yaw = 0,thrust = 1)
 			print(alt_cible-alt)
 			vit_prec=vit
 			time.sleep(dt)
@@ -214,7 +214,7 @@ def chgt_alt(master : mavutil.mavlink_connection, state_dictionary : dict, haute
 			stabilite += stab["stabilite"]
 			thrust = stab["thrust"]
 
-			fct.send_attitude(master,0,pitch_prec,0,thrust)
+			fct.send_attitude(master, master_lock, 0,pitch_prec,0,thrust)
 			time.sleep(dt)
 			print("stabilisation")
 
@@ -228,13 +228,13 @@ def chgt_alt(master : mavutil.mavlink_connection, state_dictionary : dict, haute
 		pitch_prec= stab ["pitch"]
 		stabilite += stab["stabilite"]
 		thrust = stab["thrust"]
-		fct.send_attitude(master,0,pitch_prec,0,thrust)
+		fct.send_attitude(master, master_lock, 0,pitch_prec,0,thrust)
 		time.sleep(dt)
-	fct.set_mode(master,'AUTO')
+	fct.set_mode(master,'AUTO', master_lock)
 
 #==========Accélération poussée min-poussée max==========
 
-def accel(master : mavutil.mavlink_connection, state_dictionary : dict, min_thrust : float = 0.3, max_thrust : float = 1):#vérifier la poussé min en décrochage
+def accel(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock : any, min_thrust : float = 0.3, max_thrust : float = 1):#vérifier la poussé min en décrochage
 #Variables Globales
 	
 	global alt_cible
@@ -263,9 +263,9 @@ def accel(master : mavutil.mavlink_connection, state_dictionary : dict, min_thru
 	dt=alt_stab["dt"]
 
 #Initialisation de l'avion en mode poussée minimale pendant 3 secondes
-	fct.set_mode(master,'GUIDED')
+	fct.set_mode(master,'GUIDED', master_lock)
 	for i in range (30): 
-		fct.send_attitude(master,0, pitch_prec, 0, min_thrust)
+		fct.send_attitude(master, master_lock, 0, pitch_prec, 0, min_thrust)
 		time.sleep(0.1)
 
 #Accélération
@@ -286,35 +286,35 @@ def accel(master : mavutil.mavlink_connection, state_dictionary : dict, min_thru
 		pitch_prec = alt_stab["pitch"]
 		roll= cap_stab["roll"]
 
-		fct.send_attitude(master,roll, pitch_prec, 0, max_thrust)
+		fct.send_attitude(master, master_lock, roll, pitch_prec, 0, max_thrust)
 		if acc<acc_prec+5:
 	 		c+=1
 		else:
 			c= max(0,c-1)
 		time.sleep(dt)
-	fct.set_mode(master,'AUTO')
+	fct.set_mode(master,'AUTO', master_lock)
 
 
 #==========Changement de poussée==========
 
-def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, vitesse : float):
+def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock : any, vitesse : float):
 	pitch = state_dictionary['pitch']
-	fct.set_mode(master,'GUIDED')
-	fct.send_attitude(master,0, pitch, 0, vitesse)
-	fct.set_mode(master,'AUTO')
+	fct.set_mode(master,'GUIDED', master_lock)
+	fct.send_attitude(master, master_lock, 0, pitch, 0, vitesse)
+	fct.set_mode(master,'AUTO', master_lock)
 	
 #==========Oscillation tanguage==========
 
-def oscillation_tang(master : mavutil.mavlink_connection, state_dictionary : dict, pitch_max : float = 10, nb_oscillation : int = 5):
-    vit_target = get_vit_min(master,state_dictionary, mass = 5)+2
-    for i in (nb_oscillation):
+def oscillation_tang(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock :any, pitch_max : float = 10, nb_oscillation : int = 5):
+    vit_target = get_vit_min(master,state_dictionary, master_lock, mass = 5)+2
+    for i in range(nb_oscillation):
         pitch= state_dictionary["pitch"]
 
         while pitch<pitch_max:
             vit_stab = cor.vit(state_dictionary, vit_target= vit_target, erreur_cum=0, dt=0.05) 
             thrust = vit_stab["thrust"] 
-            fct.send_attitude(master,0, pitch_max, 0, thrust)
+            fct.send_attitude(master, master_lock, 0, pitch_max, 0, thrust)
         while pitch>-pitch_max:
             vit_stabc = cor.vit(state_dictionary, vit_target= vit_target, erreur_cum=0, dt=0.05) 
             thrust = vit_stab["thrust"] 
-            fct.send_attitude(master,0, -pitch_max, 0, thrust)
+            fct.send_attitude(master, master_lock, 0, -pitch_max, 0, thrust)
