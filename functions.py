@@ -140,17 +140,17 @@ def calculer_point_arriere(lat, lon, distance_m=100, azimut_deg=0):
 
     # On veut aller à l'opposé de l'azimut (derrière l'avion)
     angle_arriere = (azimut_deg + 180) % 360
-    brng = math.radians(angle_arriere)
+    brng = radians(angle_arriere)
 
-    lat1 = math.radians(lat)
-    lon1 = math.radians(lon)
+    lat1 = radians(lat)
+    lon1 = radians(lon)
 
     # Calcul de la nouvelle latitude
-    lat2 = math.asin(math.sin(lat1) * math.cos(distance_m/R) +
-                     math.cos(lat1) * math.sin(distance_m/R) * math.cos(brng))
+    lat2 = asin(sin(lat1) * cos(distance_m/R) +
+                     cos(lat1) * sin(distance_m/R) * cos(brng))
 
     # Calcul de la nouvelle longitude
-    lon2 = lon1 + math.atan2(math.sin(brng) * math.sin(distance_m/R) * math.cos(lat1),
-                             math.cos(distance_m/R) - math.sin(lat1) * math.sin(lat2))
+    lon2 = lon1 + atan2(sin(brng) * sin(distance_m/R) * cos(lat1),
+                             cos(distance_m/R) - sin(lat1) * sin(lat2))
 
     return lat2, lon2
