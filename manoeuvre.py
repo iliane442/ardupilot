@@ -36,7 +36,7 @@ def get_vit_min(master : mavutil.mavlink_connection, state_dictionary : dict, ma
 
 #==========Décollage==========
 
-def take_off(master : mavutil.mavlink_connection, log : function, state_dictionary : dict, alt : float = 50, thr_max : float = 100, pitch : float = None, initial_pitch : float = None):
+def take_off(master : mavutil.mavlink_connection, log : any, state_dictionary : dict, alt : float = 50, thr_max : float = 100, pitch : float = None, initial_pitch : float = None):
 
 #Variable globale
 	global alt_cible

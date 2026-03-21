@@ -21,7 +21,7 @@ class waypoint:
 
 ## Pré-verification des composants   
 
-def battery_pre_verification(master : mavutil.mavlink_connection, log : function, blocking : bool):
+def battery_pre_verification(master : mavutil.mavlink_connection, log : any, blocking : bool):
     message = master.recv_match(type='SYS_STATUS', blocking=blocking, timeout=2 if blocking else 0 )
     if message is None:
         return False
@@ -40,7 +40,7 @@ def battery_pre_verification(master : mavutil.mavlink_connection, log : function
     log("Batterie OK")
     return True 
 
-def GPS_pre_verification(master : mavutil.mavlink_connection, log : function):
+def GPS_pre_verification(master : mavutil.mavlink_connection, log : any):
     message = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout = 2)
     if message is None:
         log('Impossible de connaitre les coordonnées GPS')
@@ -52,7 +52,7 @@ def GPS_pre_verification(master : mavutil.mavlink_connection, log : function):
         log("GPS non prêt")
         return False
     
-def sensors_pre_verification(master : mavutil.mavlink_connection, log : function, blocking : bool):
+def sensors_pre_verification(master : mavutil.mavlink_connection, log : any, blocking : bool):
     ekf_critical_flags= {
         0: "EKF_ATTITUDE (Tilt roll/pitch)",
         1: "EKF_VEL_VERT (Vitesse verticale)",
@@ -82,7 +82,7 @@ def sensors_pre_verification(master : mavutil.mavlink_connection, log : function
     else:
         return False
 
-def pre_verification(master : mavutil.mavlink_connection, log :function):
+def pre_verification(master : mavutil.mavlink_connection, log :any):
     
     if not battery_pre_verification(master, log, blocking = True):
         log('Impossible de lire la batterie')
@@ -312,7 +312,7 @@ def read_mav_mess(master : mavutil.mavlink_connection, state_dictionary : dict, 
 
 #==========Thread sur les failsafes ==========
 
-def battery_verification(state_dictionary : dict, log : function):
+def battery_verification(state_dictionary : dict, log : any):
     message = state_dictionary["battery"]
     if message is None:
         return False
@@ -330,7 +330,7 @@ def battery_verification(state_dictionary : dict, log : function):
 
     return True
 
-def sensors_verification(state_dictionary : dict, log : function):
+def sensors_verification(state_dictionary : dict, log : any):
     ekf_critical_flags= {
         0: "EKF_ATTITUDE (Tilt roll/pitch)",
         1: "EKF_VEL_VERT (Vitesse verticale)",
@@ -359,7 +359,7 @@ def sensors_verification(state_dictionary : dict, log : function):
     else:
         return False
 
-def GPS_verification(state_dictionary : dict, log : function):
+def GPS_verification(state_dictionary : dict, log : any):
     msg = state_dictionary["GPS"]
 
     if msg is None:
@@ -372,7 +372,7 @@ def GPS_verification(state_dictionary : dict, log : function):
         return False  
   
 
-def ask_for_failsafes(state_dictionary : dict, GPS_failsafe_counter : int, sensors_failsafe_counter : int, battery_failsafe_counter : int, failsafe_threshold : int, log : function):
+def ask_for_failsafes(state_dictionary : dict, GPS_failsafe_counter : int, sensors_failsafe_counter : int, battery_failsafe_counter : int, failsafe_threshold : int, log : any):
 
     if not GPS_verification(state_dictionary, log):
         GPS_failsafe_counter += 1
@@ -402,7 +402,7 @@ def ask_for_failsafes(state_dictionary : dict, GPS_failsafe_counter : int, senso
         
     return True, GPS_failsafe_counter, sensors_failsafe_counter, battery_failsafe_counter 
 
-def threading_failsafes(state_dictionary : dict, stop_event, log : function):
+def threading_failsafes(state_dictionary : dict, stop_event, log : any):
     GPS_failsafe_counter = 0
     sensors_failsafe_counter = 0
     battery_failsafe_counter = 0  
