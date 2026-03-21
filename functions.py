@@ -129,7 +129,7 @@ def lancement_sitl():
 
 
 # Calcule un point à une certaine distance (en mètres) derrière un point donné.
-    azimut_deg : direction vers laquelle l'avion pointe (0=Nord, 90=Est, 180=Sud, 270=Ouest)
+#  azimut_deg : direction vers laquelle l'avion pointe (0=Nord, 90=Est, 180=Sud, 270=Ouest)
 
 
 def calculer_point_arriere(lat, lon, distance_m=100, azimut_deg=0):
