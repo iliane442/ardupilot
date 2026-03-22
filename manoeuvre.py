@@ -303,8 +303,10 @@ def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, maste
 	erreur_cum = 0
 	c = 0	
 	vit = 0
+	dt= 0.05
 	while abs(vitesse-vit)>0.2 and c<10:
 		vit_stab = cor.vit(master, vitesse,erreur_cum)
+		erreur_cum = vit_stab["erreur_cum"]
 		thrust = vit_stab["thrust"]
 		vit = state_dictionary['vitesse']
 		fct.send_attitude(master, master_lock, 0,0,0, thrust)
