@@ -467,7 +467,7 @@ def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_
     while not stop_event.is_set():              ## tant qu'on a pas de problème de failsafe, le programme continue
 
         num_waypoint = state_dictionary.get("current_waypoint")     ## on va chercher la valeur du waypoint
-		log(f"passage au waypoint {num_waypoint}")
+        log(f"passage au waypoint {num_waypoint}")
         if num_waypoint != last_waypoint:                          ## on regarde ou se placer dans la mission
             if num_waypoint != 0 :
                 alt_cible = dic_mission[num_waypoint][0].alt
@@ -475,7 +475,7 @@ def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_
                 maneuvers = clean_dico_maneuvers[num_waypoint]
                 for maneuver in maneuvers:                              ## on effectue les manoeuvres à la suite 
                     maneuver_selection(maneuver, master, state_dictionary, master_lock)
-					log(f'manoeuvre complété, passage a la manoeuvre {maneuver}')
+                    log(f'manoeuvre complété, passage a la manoeuvre {maneuver}')
                 clean_dico_maneuvers[num_waypoint] = []             ## sécurité supplémentaire optionnelle
             last_waypoint = num_waypoint
 

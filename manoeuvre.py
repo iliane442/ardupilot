@@ -288,7 +288,7 @@ def accel(master : mavutil.mavlink_connection, state_dictionary : dict, master_l
 		fct.send_attitude(master, master_lock, roll, pitch_prec, 0, max_thrust)
 		if acc<acc_prec+5:
 	 		c += 1
-		else:
+		else :
 			c = max(0,c-1)
 		time.sleep(dt)
 	fct.set_mode(master,'AUTO', master_lock)
@@ -308,7 +308,7 @@ def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, maste
 		erreur_cum = vit_stab["erreur_cum"]
 		thrust = vit_stab["thrust"]
 		vit = state_dictionary['vitesse']
-		alt = state_dictionnary['altitude']
+		alt = state_dictionary['altitude']
 		if thrust<0.34:
 			stop += 1
 			if stop >=10:
