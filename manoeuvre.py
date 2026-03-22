@@ -308,6 +308,12 @@ def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, maste
 		vit_stab = cor.vit(master, vitesse,erreur_cum)
 		erreur_cum = vit_stab["erreur_cum"]
 		thrust = vit_stab["thrust"]
+		if thrust<0.34:
+			stop += 1
+			if stop >=10:
+				return print("maneuver aborted")
+		else:
+			stop = 0 
 		vit = state_dictionary['vitesse']
 		fct.send_attitude(master, master_lock, 0,0,0, thrust)
 		if abs(vitesse_vit)<0.2:
