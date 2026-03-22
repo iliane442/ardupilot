@@ -5,7 +5,6 @@ from transforms3d.euler import euler2quat
 import threading
 import functions as fct
 from manoeuvre import *
-from manoeuvre import alt_cible
 
 
 class waypoint:
@@ -468,8 +467,8 @@ def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_
     while not stop_event.is_set():              ## tant qu'on a pas de problème de failsafe, le programme continue
 
         num_waypoint = state_dictionary.get("current_waypoint")     ## on va chercher la valeur du waypoint
-
         if num_waypoint != last_waypoint:                          ## on regarde ou se placer dans la mission
+            if num_waypoint != 0 :
                 alt_cible = dic_mission[num_waypoint][0].alt
             if num_waypoint in clean_dico_maneuvers:
                 maneuvers = clean_dico_maneuvers[num_waypoint]
