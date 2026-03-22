@@ -288,9 +288,9 @@ def accel(master : mavutil.mavlink_connection, state_dictionary : dict, master_l
 
 		fct.send_attitude(master, master_lock, roll, pitch_prec, 0, max_thrust)
 		if acc<acc_prec+5:
-	 		c+=1
+	 		c += 1
 		else:
-			c= max(0,c-1)
+			c = max(0,c-1)
 		time.sleep(dt)
 	fct.set_mode(master,'AUTO', master_lock)
 
@@ -298,9 +298,21 @@ def accel(master : mavutil.mavlink_connection, state_dictionary : dict, master_l
 #==========Changement de poussée==========
 
 def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, master_lock : any, vitesse : float):
-	pitch = state_dictionary['pitch']
+	
 	fct.set_mode(master,'GUIDED', master_lock)
-	fct.send_attitude(master, master_lock, 0, pitch, 0, vitesse)
+	erreur_cum = 0
+	c = 0	
+	vit = 0
+	while abs(vitesse-vit)>0.2 and c<10:
+		vit_stab = cor.vit(master, vitesse,erreur_cum)
+		thrust = vit_stab["thrust"]
+		vit = state_dictionary['vitesse']
+		fct.send_attitude(master, master_lock, 0,0,0, thrust)
+		if abs(vitesse_vit)<0.2:
+			c+=1
+		else:
+			c=max(0,c-1)
+		time.sleep(dt)
 	fct.set_mode(master,'AUTO', master_lock)
 	
 #==========Oscillation tanguage==========
