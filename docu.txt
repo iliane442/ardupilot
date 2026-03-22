@@ -42,5 +42,3 @@ fonctions :
     lancer_mission()
 
 La suite du code permet de faire tourner l'interface, l'affichage des boutons et leur associement aux fonctions
-
-#functions.py :: code qui gère les fonctions liées aux boutons autres que l'affichage
