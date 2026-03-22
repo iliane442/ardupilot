@@ -200,7 +200,6 @@ def chgt_alt(master : mavutil.mavlink_connection, state_dictionary : dict, maste
 
 		if vit > vit_min+1: # Sécurité pour empêcher la diminution de vitesse trop rapide associée au décrochage
 			fct.send_attitude(master, master_lock, roll = 0,pitch = 20*copysign(1,var_alt),yaw = 0,thrust = 1)
-			print(alt_cible-alt)
 			vit_prec=vit
 			time.sleep(dt)
 
@@ -308,18 +307,22 @@ def chgt_vit(master : mavutil.mavlink_connection, state_dictionary : dict, maste
 		vit_stab = cor.vit(master, vitesse,erreur_cum)
 		erreur_cum = vit_stab["erreur_cum"]
 		thrust = vit_stab["thrust"]
+		vit = state_dictionary['vitesse']
+		alt = state_dictionnary['altitude']
 		if thrust<0.34:
 			stop += 1
 			if stop >=10:
 				return print("maneuver aborted")
 		else:
 			stop = 0 
-		vit = state_dictionary['vitesse']
-		fct.send_attitude(master, master_lock, 0,0,0, thrust)
-		if abs(vitesse_vit)<0.2:
+		if alt>110:
+			return print ("maneuver aborted altitude exceedance")
+	
+		if abs(vitesse-vit)<0.2:
 			c+=1
 		else:
 			c=max(0,c-1)
+		fct.send_attitude(master, master_lock, 0,0,0, thrust)
 		time.sleep(dt)
 	fct.set_mode(master,'AUTO', master_lock)
 	
