@@ -11,7 +11,7 @@ from backend import pre_verification,check_mission, waypoint, main, send_mission
 from functions import nettoyage,connection_vehicle,lancement_sitl,armed,set_param
 
 
-type_waypoint=["WAYPOINT", "RTL", "LOITER", "GUIDED", "LAND"]
+type_waypoint=["WAYPOINT", "LOITER", "LAND"]
 liste_manoeuvres=["accélération/décélération(x)", "virage à (x) °", "changement d'altitude(x)","oscillations en tangage","oscillations en roulis","variation rapide de poussée","S-turn(x)"]
 arm=False
 master = None
@@ -70,7 +70,7 @@ def ajouter_waypoint_dico(wp : waypoint, dic : dict, num : int, page : ctk.CTkFr
 
 def param_manoeuvre(choix : str ):
     if choix == liste_manoeuvres[0]:
-        frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: pourcentage de puissance (0-1)")
+        frame_manoeuvre_label_manoeuvre.configure(text=f"{choix}: pourcentage de puissance (v) en m/s")
         entry_manoeuvre.place(x=400, y=150)
         return entry_manoeuvre
     elif choix == liste_manoeuvres[1]:
@@ -378,11 +378,11 @@ def sauvegarder_historique(dic_mission : dict):
         # --- MISE À JOUR DE L'INTERFACE ---
         with open(nom_fichier, "r", encoding="utf-8") as f:
             text = f.read()
-            frame_menu_scroll_mission.configure(state="normal")
-            frame_menu_scroll_mission.delete("1.0", "end")
-            frame_menu_scroll_mission.insert("1.0", text)
-            frame_menu_scroll_mission.see("end") # scrolle automatiquement vers le bas
-            frame_menu_scroll_mission.configure(state="disabled")
+            frame_log_scroll_mission.configure(state="normal")
+            frame_log_scroll_mission.delete("1.0", "end")
+            frame_log_scroll_mission.insert("1.0", text)
+            frame_log_scroll_mission.see("end") # scrolle automatiquement vers le bas
+            frame_log_scroll_mission.configure(state="disabled")
 
     except AssertionError as e:
         error_label = ctk.CTkLabel(frame_logs, text=str(e), font=("Arial", 12), text_color="red", wraplength=180, justify="left")
@@ -630,7 +630,7 @@ frame_launch_terminal.configure(state="disabled")
 ########################################################################### Gestion de la page des logs ###########################################################################
 frame_logs = ctk.CTkFrame(app)
 
-frame_log_name = ctk.CTkLabel(frame_logs, text="HISTORIQUE DES MANOEUVRES", font=("Arial", 20), text_color="orange")
+frame_log_name = ctk.CTkLabel(frame_logs, text="HISTORIQUE DES MISSIONS", font=("Arial", 20), text_color="orange")
 frame_log_name.pack(pady=20)
 
 frame_log_return = ctk.CTkButton(frame_logs, text="Retour", command=lambda: afficher_page(frame_logs, frame_menu), fg_color="gray")

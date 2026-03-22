@@ -107,7 +107,7 @@ def lancement_sitl():
 	ardupilot_dir = "ardupilot"  # dossier ArduPilot
 	# Lancer SITL en arrière-plan
 	print("🚀 Lancement de SITL...")
-	sitl_proc = subprocess.Popen(["python3", "./Tools/autotest/sim_vehicle.py", "-v", "ArduPlane", "--out", "udp:127.0.0.1:14550", "--out", "udp:127.0.0.1:14551"], cwd=ardupilot_dir)
+	sitl_proc = subprocess.Popen(["python3", "./Tools/autotest/sim_vehicle.py", "-v", "ArduPlane","--map", "--out", "udp:127.0.0.1:14550", "--out", "udp:127.0.0.1:14551"], cwd=ardupilot_dir)
 	return True
 
 
