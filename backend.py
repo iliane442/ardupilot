@@ -460,13 +460,14 @@ def create_clean_dico_maneuver(dico_maneuver : dict):          ## {1 : [liste_ma
     return clean_dict
 
 
-def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_event, master : mavutil.mavlink_connection, master_lock : any, dic_mission):
+def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_event, master : mavutil.mavlink_connection, master_lock : any, dic_mission, log : any):
     global alt_cible
     last_waypoint = None                        ## on va mémoriser le dernier waypoint pour ne pas refaire les manoeuvres deux fois 
 
     while not stop_event.is_set():              ## tant qu'on a pas de problème de failsafe, le programme continue
 
         num_waypoint = state_dictionary.get("current_waypoint")     ## on va chercher la valeur du waypoint
+		log(f"passage au waypoint {num_waypoint}")
         if num_waypoint != last_waypoint:                          ## on regarde ou se placer dans la mission
             if num_waypoint != 0 :
                 alt_cible = dic_mission[num_waypoint][0].alt
@@ -474,6 +475,7 @@ def thread_maneuvers(state_dictionary : dict, clean_dico_maneuvers : dict, stop_
                 maneuvers = clean_dico_maneuvers[num_waypoint]
                 for maneuver in maneuvers:                              ## on effectue les manoeuvres à la suite 
                     maneuver_selection(maneuver, master, state_dictionary, master_lock)
+					log(f'manoeuvre complété, passage a la manoeuvre {maneuver}')
                 clean_dico_maneuvers[num_waypoint] = []             ## sécurité supplémentaire optionnelle
             last_waypoint = num_waypoint
 
@@ -524,7 +526,7 @@ def main(master : mavutil.mavlink_connection, dic_mission : dict, log : any):
 
         log("Démarrage du thread failsafe...")
 
-        thread_on_maneuvers = threading.Thread(target = thread_maneuvers, args =(state_dictionary, clean_dico_maneuvers, stop_event, master, master_lock,dic_mission), daemon = True)
+        thread_on_maneuvers = threading.Thread(target = thread_maneuvers, args =(state_dictionary, clean_dico_maneuvers, stop_event, master, master_lock,dic_mission, log), daemon = True)
         thread_on_maneuvers.start()
 
         log("Démarrage du thread manoeuvre...")
