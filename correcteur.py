@@ -22,12 +22,17 @@ def alt(state_dictionary, alt_target, erreur_cum=0, alt_prec=0, pitch_prec=0, dt
 
 # Activation du correcteur pour la puissance moteur PI + pitch P
 	if corr_thrust:
-		if abs(alt-alt_target)<3:
+		if abs(alt-alt_target)<5:
 			erreur_cum += erreur * dt
+			erreur_cum = max(min(erreur_cum, 10), -10)
+		print(erreur_cum)
 		thrust = 0.5 + erreur_cum * 0.05
 		thrust = max(0.3, min(thrust, 1)) #Saturation min pour éviter le décrochage et max pour rester dans les plages de valeurs admissibles
-		pitch_prop = erreur*5
-		pitch = max(-15, min(pitch_prop, 15))
+		pitch_prop = erreur*3
+		pitch_der = derreur*0.5
+		pitch = max(pitch_prec-1,min(pitch_prop+pitch_der,pitch_prec+1))
+		pitch = max(-10, min(pitch_prop, 10))
+		print (thrust, pitch)
 
 # Activation du correcteur d'angle seul correcteur PD
 	else:
