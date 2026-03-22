@@ -72,7 +72,7 @@ def vit(state_dictionary, vit_target, erreur_cum=0, dt=0.05):
 	erreur_cum += erreur * dt
 	erreur_cum = max(-20, min(erreur_cum, 20))
 
-	thrust_int = erreur_cum * 0.05 #correction plus fine de la poussé terme intégral 
+	thrust_int = erreur_cum * 0.08 #correction plus fine de la poussé terme intégral 
 
 	thrust = 0.5+thrust_int+thrust_prop
 	thrust = max(0.3, min(thrust, 1))
