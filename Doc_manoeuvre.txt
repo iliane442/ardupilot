@@ -1,0 +1,73 @@
+get_vit_min(master, state_dictionary, master_lock, masse, roll_angle=0)
+Rôle : calcule la vitesse minimale (anti-décrochage)
+Args :
+master : connexion MAVLink
+state_dictionary : état avion (vitesse, altitude…)
+master_lock : verrou thread
+masse : masse avion (kg)
+roll_angle : inclinaison (°)
+Retour : vit_min (float)
+
+take_off(master, log, state_dictionary, master_lock, alt=50, thr_max=100, pitch=None, initial_pitch=None)
+Rôle : décollage autonome
+Args :
+master : MAVLink
+log : fonction de log
+state_dictionary : état avion
+master_lock : verrou
+alt : altitude cible (m)
+thr_max : poussée max (%)
+pitch : pitch montée
+initial_pitch : pitch au sol
+
+virage(master, state_dictionary, master_lock, angle=0, inclinaison=30)
+Rôle : virage avec maintien d’altitude
+Args :
+master : MAVLink
+state_dictionary : état avion
+master_lock : verrou
+angle : angle à parcourir (°)
+inclinaison : roll (°)
+
+S_turn(master, state_dictionary, master_lock, nb_boucle=1, inclinaison=30)
+Rôle : trajectoire en S
+Args :
+master : MAVLink
+state_dictionary : état avion
+master_lock : verrou
+nb_boucle : nombre d’oscillations
+inclinaison : roll (°)
+
+chgt_alt(master, state_dictionary, master_lock, hauteur=0)
+Rôle : changement d’altitude sécurisé
+Args :
+master : MAVLink
+state_dictionary : état avion
+master_lock : verrou
+hauteur : altitude cible (m)
+
+accel(master, state_dictionary, master_lock, min_thrust=0.3, max_thrust=1)
+Rôle : test d’accélération
+Args :
+master : MAVLink
+state_dictionary : état avion
+master_lock : verrou
+min_thrust : poussée min
+max_thrust : poussée max
+
+ chgt_vit(master, state_dictionary, master_lock, vitesse)
+Rôle : régulation vitesse
+Args :
+master : MAVLink
+state_dictionary : état avion
+master_lock : verrou
+vitesse : vitesse cible
+
+ oscillation_tang(master, state_dictionary, master_lock, pitch_max=10, nb_oscillation=5)
+Rôle : oscillations en tangage
+Args :
+master : MAVLink
+state_dictionary : état avion
+master_lock : verrou
+pitch_max : amplitude pitch (°)
+nb_oscillation : nombre d’oscillations
