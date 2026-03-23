@@ -141,8 +141,8 @@ def check_mission(dic_mission : dict):                 					## permet de s'assur
         if not check_radius(wp_current, wp_next):              	 ## si deux waypoints sont trop proches 
             return 'la mission n est pas valide car deux checkpoints sont trop rapprochés'
         
-        if wp_current.alt > 100 or wp_current.alt < 0:                                     ## en france, on ne peut pas voler à plus de 120 mètre de hauteur (inclue un coef de sécurité)
-            return f"Waypoint {i} trop haut ou trop bas : {wp_current.alt} m"        
+        if wp_current.alt > 110 or wp_current.alt < 0:                                     ## en france, on ne peut pas voler à plus de 120 mètre de hauteur (inclue un coef de sécurité)
+            return f"Waypoint {i+1} trop haut ou trop bas : {wp_current.alt} m"        
     return 'Mission valide' 
 
 def add_home_waypoint(master : mavutil.mavlink_connection , mission : list):
