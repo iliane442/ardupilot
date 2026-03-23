@@ -52,7 +52,7 @@ WP 5: alt=0.1, lat=-35.3635, long=149.1652, radius=2.5, cmd=LAND
 ------------------------------
 
 --- MISSION N°7 ---
-WP 1: alt=60.0, lat=-35.3639041, long=149.1677606, radius=2.5, cmd=WAYPOINT
+WP 1: alt=50.0, lat=-35.3639041, long=149.1677606, radius=2.5, cmd=WAYPOINT
    > Maneuver 1: virage à (50) °
 WP 2: alt=70.0, lat=-35.3709863, long=149.16935, radius=2.5, cmd=WAYPOINT
    > Maneuver 1: S-turn(1)
